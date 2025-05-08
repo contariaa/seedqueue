@@ -6,7 +6,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.WorldGenerationProgressTracker;
 import net.minecraft.client.gui.screen.LevelLoadingScreen;
 import net.minecraft.client.util.Window;
-import net.minecraft.client.util.math.MatrixStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -26,7 +25,7 @@ public abstract class MinecraftClientMixin {
             method = "render",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/util/profiler/Profiler;pop()V",
+                    target = "Lnet/minecraft/util/profiler/DisableableProfiler;pop()V",
                     ordinal = 0
             ),
             slice = @Slice(
@@ -55,7 +54,7 @@ public abstract class MinecraftClientMixin {
                 x = 3;
                 y += tracker.getSize() + 3;
             }
-            LevelLoadingScreen.drawChunkMap(new MatrixStack(), tracker, x + tracker.getSize() / 2, y + tracker.getSize() / 2, 1, 0);
+            LevelLoadingScreen.drawChunkMap(tracker, x + tracker.getSize() / 2, y + tracker.getSize() / 2, 1, 0);
             x += tracker.getSize() + 3;
         }
     }

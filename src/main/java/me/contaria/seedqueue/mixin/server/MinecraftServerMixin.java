@@ -11,10 +11,7 @@ import me.contaria.seedqueue.mixin.accessor.EntityAccessor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.ServerTask;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.thread.ReentrantThreadExecutor;
-import net.minecraft.world.level.ServerWorldProperties;
-import net.minecraft.world.level.storage.LevelStorage;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,7 +19,6 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Optional;
@@ -32,17 +28,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Mixin(MinecraftServer.class)
 public abstract class MinecraftServerMixin extends ReentrantThreadExecutor<ServerTask> implements SQMinecraftServer {
-
     @Shadow
     private volatile boolean loading;
 
     @Shadow
     @Final
-    protected LevelStorage.Session session;
+    private String levelName;
 
     @Shadow
     @Final
     private Executor workerExecutor;
+
+    @Shadow
+    @Final
+    protected Thread serverThread;
 
     @Unique
     private CompletableFuture<SeedQueueEntry> seedQueueEntry;
@@ -77,22 +76,21 @@ public abstract class MinecraftServerMixin extends ReentrantThreadExecutor<Serve
         return executor;
     }
 
-    @ModifyVariable(
+    @Inject(
             method = "<init>",
-            at = @At("TAIL"),
-            argsOnly = true
+            at = @At("TAIL")
     )
-    private Thread modifyServerThreadProperties(Thread thread) {
+    private void modifyServerThreadProperties(CallbackInfo ci) {
+        Thread thread = this.serverThread;
         if (SeedQueue.inQueue()) {
             thread.setPriority(SeedQueue.config.serverThreadPriority);
         }
-        String name = this.session.getDirectoryName();
+        String name = this.levelName;
         if (name.startsWith("Random Speedrun #") || name.startsWith("Set Speedrun #")) {
             thread.setName(thread.getName() + " " + name.substring(name.indexOf('#')));
         } else {
             thread.setName(thread.getName() + " - " + name);
         }
-        return thread;
     }
 
     @Inject(
@@ -106,42 +104,10 @@ public abstract class MinecraftServerMixin extends ReentrantThreadExecutor<Serve
     }
 
     @Inject(
-            method = "loadWorld",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/server/WorldGenerationProgressListenerFactory;create(I)Lnet/minecraft/server/WorldGenerationProgressListener;"
-            )
-    )
-    private void setThreadLocalSeedQueueEntry(CallbackInfo ci) {
-        this.seedQueue$getEntry().ifPresent(SeedQueue.LOCAL_ENTRY::set);
-    }
-
-    @Inject(
-            method = "setupSpawn",
-            at = {
-                    @At(
-                            value = "INVOKE",
-                            target = "Lnet/minecraft/world/biome/source/BiomeSource;locateBiome(IIIILjava/util/List;Ljava/util/Random;)Lnet/minecraft/util/math/BlockPos;"
-                    ),
-                    @At(
-                            value = "INVOKE",
-                            target = "Lnet/minecraft/server/network/SpawnLocating;findServerSpawnPoint(Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/util/math/ChunkPos;Z)Lnet/minecraft/util/math/BlockPos;"
-                    )
-            },
-            cancellable = true
-    )
-    private static void pauseOrResetServerDuringWorldSetup(ServerWorld serverWorld, ServerWorldProperties serverWorldProperties, boolean bl, boolean bl2, boolean bl3, CallbackInfo ci) {
-        ((SQMinecraftServer) serverWorld.getServer()).seedQueue$tryPausingServer();
-        if (((SQMinecraftServer) serverWorld.getServer()).seedQueue$isDiscarded()) {
-            ci.cancel();
-        }
-    }
-
-    @Inject(
             method = "prepareStartRegion",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/server/MinecraftServer;runTasksTillTickEnd()V",
+                    target = "Lnet/minecraft/server/MinecraftServer;method_16208()V",
                     shift = At.Shift.AFTER
             )
     )
@@ -160,7 +126,7 @@ public abstract class MinecraftServerMixin extends ReentrantThreadExecutor<Serve
     }
 
     @WrapOperation(
-            method = "runServer",
+            method = "run",
             at = @At(
                     value = "FIELD",
                     target = "Lnet/minecraft/server/MinecraftServer;loading:Z",
@@ -176,7 +142,7 @@ public abstract class MinecraftServerMixin extends ReentrantThreadExecutor<Serve
 
         original.call(server, value);
 
-        SeedQueue.LOGGER.info("Finished loading \"{}\".", this.session.getDirectoryName());
+        SeedQueue.LOGGER.info("Finished loading \"{}\".", this.levelName);
         this.seedQueue$tryPausingServer();
         this.seedQueueEntry = null;
     }
@@ -198,18 +164,17 @@ public abstract class MinecraftServerMixin extends ReentrantThreadExecutor<Serve
 
     @Override
     public boolean seedQueue$shouldPause() {
-        CompletableFuture<SeedQueueEntry> future = this.seedQueueEntry;
-        if (future == null) {
-            return false;
-        }
-        SeedQueueEntry entry = this.seedQueueEntry.join();
-        if (entry.isLoaded() || entry.isDiscarded()) {
+        SeedQueueEntry entry = this.seedQueue$getEntry().orElse(null);
+        if (entry == null || entry.isLoaded() || entry.isDiscarded()) {
             return false;
         }
         if (this.pauseScheduled || entry.isReady()) {
             return true;
         }
-        if (!entry.hasWorldPreview() || entry.isLocked()) {
+        if (!entry.hasWorldPreview()) {
+            return false;
+        }
+        if (entry.isLocked()) {
             return false;
         }
         if (SeedQueue.config.resumeOnFilledQueue && entry.isMaxWorldGenerationReached() && SeedQueue.isFull()) {
@@ -268,11 +233,6 @@ public abstract class MinecraftServerMixin extends ReentrantThreadExecutor<Serve
             this.notify();
             this.paused = false;
         }
-    }
-
-    @Override
-    public boolean seedQueue$isDiscarded() {
-        return this.seedQueueEntry != null && this.seedQueueEntry.isDone() && this.seedQueueEntry.join().isDiscarded();
     }
 
     @Override

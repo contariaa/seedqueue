@@ -1,7 +1,7 @@
 package me.contaria.seedqueue.mixin.compat.sodium.profiling;
 
 import me.contaria.seedqueue.debug.SeedQueueProfiler;
-import me.jellysquid.mods.sodium.client.render.chunk.backends.multidraw.MultidrawChunkRenderBackend;
+import me.jellysquid.mods.sodium.client.render.chunk.backends.gl43.GL43ChunkRenderBackend;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -11,14 +11,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * Profiling mixins add more usage of the profiler to hot paths during wall rendering.
  * These Mixins will be removed in later versions of SeedQueue.
  */
-@Mixin(value = MultidrawChunkRenderBackend.class, remap = false)
+@Mixin(value = GL43ChunkRenderBackend.class, remap = false)
 public abstract class MultidrawChunkRenderBackendMixin {
 
     @Inject(
             method = "upload",
             at = @At(
                     value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/backends/multidraw/MultidrawChunkRenderBackend;setupUploadBatches(Ljava/util/Iterator;)V"
+                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/backends/gl43/GL43ChunkRenderBackend;setupUploadBatches(Ljava/util/Iterator;)V"
             )
     )
     private void profileSetupUploadBatches(CallbackInfo ci) {
@@ -29,7 +29,7 @@ public abstract class MultidrawChunkRenderBackendMixin {
             method = "upload",
             at = @At(
                     value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/gl/device/CommandList;bindBuffer(Lme/jellysquid/mods/sodium/client/gl/buffer/GlBufferTarget;Lme/jellysquid/mods/sodium/client/gl/buffer/GlBuffer;)V"
+                    target = "Lme/jellysquid/mods/sodium/client/gl/buffer/GlMutableBuffer;bind(I)V"
             )
     )
     private void profileBindBuffer(CallbackInfo ci) {
@@ -40,7 +40,7 @@ public abstract class MultidrawChunkRenderBackendMixin {
             method = "upload",
             at = @At(
                     value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/gl/device/CommandList;bindBuffer(Lme/jellysquid/mods/sodium/client/gl/buffer/GlBufferTarget;Lme/jellysquid/mods/sodium/client/gl/buffer/GlBuffer;)V",
+                    target = "Lme/jellysquid/mods/sodium/client/gl/buffer/GlMutableBuffer;bind(I)V",
                     shift = At.Shift.AFTER
             )
     )
@@ -63,7 +63,7 @@ public abstract class MultidrawChunkRenderBackendMixin {
             method = "upload",
             at = @At(
                     value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/gl/arena/GlBufferArena;prepareBuffer(Lme/jellysquid/mods/sodium/client/gl/device/CommandList;I)V"
+                    target = "Lme/jellysquid/mods/sodium/client/gl/arena/GlBufferArena;bind()V"
             )
     )
     private void profilePrepareBuffer(CallbackInfo ci) {
@@ -74,24 +74,12 @@ public abstract class MultidrawChunkRenderBackendMixin {
             method = "upload",
             at = @At(
                     value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/gl/arena/GlBufferArena;prepareBuffer(Lme/jellysquid/mods/sodium/client/gl/device/CommandList;I)V",
+                    target = "Lme/jellysquid/mods/sodium/client/gl/arena/GlBufferArena;bind()V",
                     shift = At.Shift.AFTER
             )
     )
     private void profileIterateResults(CallbackInfo ci) {
         SeedQueueProfiler.swap("iterate_results");
-    }
-
-    @Inject(
-            method = "upload",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/region/ChunkRegion;getTessellation()Lme/jellysquid/mods/sodium/client/gl/tessellation/GlTessellation;",
-                    ordinal = 0
-            )
-    )
-    private void profileUpdateTesselation(CallbackInfo ci) {
-        SeedQueueProfiler.swap("update_tesselation");
     }
 
     @Inject(
@@ -121,7 +109,7 @@ public abstract class MultidrawChunkRenderBackendMixin {
             method = "upload",
             at = @At(
                     value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/gl/device/CommandList;invalidateBuffer(Lme/jellysquid/mods/sodium/client/gl/buffer/GlMutableBuffer;)V"
+                    target = "Lme/jellysquid/mods/sodium/client/gl/arena/GlBufferArena;unbind()V"
             )
     )
     private void profileInvalidateBuffer(CallbackInfo ci) {

@@ -27,10 +27,10 @@ public abstract class ChunkBuilderMixin {
     }
 
     @Inject(
-            method = "createWorker",
+            method = "startWorkers",
             at = @At(
                     value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuildBuffers;<init>(Lme/jellysquid/mods/sodium/client/model/vertex/type/ChunkVertexType;Lme/jellysquid/mods/sodium/client/render/chunk/passes/BlockRenderPassManager;)V"
+                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuildBuffers;<init>(Lme/jellysquid/mods/sodium/client/gl/attribute/GlVertexFormat;Lme/jellysquid/mods/sodium/client/render/chunk/passes/BlockRenderPassManager;)V"
             )
     )
     private void profileBuildBuffers(CallbackInfo ci) {
@@ -38,22 +38,22 @@ public abstract class ChunkBuilderMixin {
     }
 
     @Inject(
-            method = "createWorker",
+            method = "startWorkers",
             at = @At(
                     value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/render/pipeline/context/ChunkRenderCacheLocal;<init>(Lnet/minecraft/client/MinecraftClient;Lnet/minecraft/world/World;)V",
+                    target = "Lme/jellysquid/mods/sodium/client/render/pipeline/context/ChunkRenderContext;<init>(Lnet/minecraft/client/MinecraftClient;)V",
                     remap = true
             )
     )
-    private void profileRenderCache(CallbackInfo ci) {
-        SeedQueueProfiler.swap("render_cache");
+    private void profileRenderContext(CallbackInfo ci) {
+        SeedQueueProfiler.swap("render_context");
     }
 
     @Inject(
-            method = "createWorker",
+            method = "startWorkers",
             at = @At(
                     value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuilder$WorkerRunnable;<init>(Lme/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuilder;Lme/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuildBuffers;Lme/jellysquid/mods/sodium/client/render/pipeline/context/ChunkRenderCacheLocal;)V"
+                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuilder$WorkerRunnable;<init>(Lme/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuilder;Lme/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuildBuffers;Lme/jellysquid/mods/sodium/client/render/pipeline/context/ChunkRenderContext;)V"
             )
     )
     private void profileWorker(CallbackInfo ci) {
@@ -61,7 +61,7 @@ public abstract class ChunkBuilderMixin {
     }
 
     @Inject(
-            method = "createWorker",
+            method = "startWorkers",
             at = @At(
                     value = "INVOKE",
                     target = "Ljava/lang/Thread;<init>(Ljava/lang/Runnable;Ljava/lang/String;)V"
@@ -72,7 +72,7 @@ public abstract class ChunkBuilderMixin {
     }
 
     @Inject(
-            method = "createWorker",
+            method = "startWorkers",
             at = @At(
                     value = "INVOKE",
                     target = "Ljava/util/List;add(Ljava/lang/Object;)Z"

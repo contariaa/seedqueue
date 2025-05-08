@@ -1,14 +1,11 @@
 package me.contaria.seedqueue.gui.config;
 
 import me.contaria.seedqueue.SeedQueueConfig;
-import me.contaria.speedrunapi.util.TextUtil;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.ParentElement;
 import net.minecraft.client.gui.widget.AbstractButtonWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.StringRenderable;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -16,8 +13,6 @@ import java.util.List;
 import java.util.Optional;
 
 public class SeedQueueWindowSizeWidget extends AbstractButtonWidget implements ParentElement {
-    private static final StringRenderable X = StringRenderable.plain("X");
-
     private final SeedQueueConfig.WindowSize windowSize;
     private final TextFieldWidget widthWidget;
     private final TextFieldWidget heightWidget;
@@ -27,9 +22,9 @@ public class SeedQueueWindowSizeWidget extends AbstractButtonWidget implements P
     private boolean isDragging;
 
     public SeedQueueWindowSizeWidget(SeedQueueConfig.WindowSize windowSize) {
-        super(0, 0, 150, 20, TextUtil.empty());
+        super(0, 0, 150, 20, "");
         this.windowSize = windowSize;
-        this.widthWidget = new TextFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, 65, 20, TextUtil.empty());
+        this.widthWidget = new TextFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, 65, 20, "");
         this.widthWidget.setText(String.valueOf(this.windowSize.width()));
         this.widthWidget.setChangedListener(text -> {
             if (text.isEmpty()) {
@@ -50,7 +45,7 @@ public class SeedQueueWindowSizeWidget extends AbstractButtonWidget implements P
                 return false;
             }
         });
-        this.heightWidget = new TextFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, 65, 20, TextUtil.empty());
+        this.heightWidget = new TextFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, 65, 20, "");
         this.heightWidget.setText(String.valueOf(this.windowSize.height()));
         this.heightWidget.setChangedListener(text -> {
             if (text.isEmpty()) {
@@ -128,14 +123,14 @@ public class SeedQueueWindowSizeWidget extends AbstractButtonWidget implements P
     }
 
     @Override
-    public void renderButton(MatrixStack matrices, int mouseX, int mouseY, float delta) {
+    public void renderButton(int mouseX, int mouseY, float delta) {
         this.widthWidget.x = this.x;
         this.widthWidget.y = this.y;
-        this.widthWidget.render(matrices, mouseX, mouseY, delta);
-        this.drawCenteredText(matrices, MinecraftClient.getInstance().textRenderer, X, this.x + this.width / 2, this.y + (this.height - MinecraftClient.getInstance().textRenderer.fontHeight) / 2, 0xFFFFFF);
+        this.widthWidget.render(mouseX, mouseY, delta);
+        this.drawCenteredString(MinecraftClient.getInstance().textRenderer, "X", this.x + this.width / 2, this.y + (this.height - MinecraftClient.getInstance().textRenderer.fontHeight) / 2, 0xFFFFFF);
         this.heightWidget.x = this.x + 85;
         this.heightWidget.y = this.y;
-        this.heightWidget.render(matrices, mouseX, mouseY, delta);
+        this.heightWidget.render(mouseX, mouseY, delta);
     }
 
     @Override

@@ -22,7 +22,6 @@ import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.render.WorldRenderer;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.MathHelper;
 
@@ -73,7 +72,8 @@ public class SeedQueuePreview extends DrawableHelper {
         if (Atum.inDemoMode()) {
             this.seedString = "North Carolina";
         } else if (Atum.getSeedProvider().shouldShowSeed()) {
-            this.seedString = ((ISeedStringHolder) this.seedQueueEntry.getServer().getSaveProperties().getGeneratorOptions()).atum$getSeedString();
+            //noinspection DataFlowIssue
+            this.seedString = ((ISeedStringHolder) (Object) this.seedQueueEntry.getLevelInfo()).atum$getSeedString();
         } else {
             this.seedString = "Set Seed";
         }
@@ -100,7 +100,7 @@ public class SeedQueuePreview extends DrawableHelper {
         }
     }
 
-    public void render(MatrixStack matrices) {
+    public void render() {
         this.updatePreviewProperties();
 
         this.wall.setOrtho(this.width, this.height);
@@ -112,23 +112,23 @@ public class SeedQueuePreview extends DrawableHelper {
                 this.buildChunks();
             }
         } else {
-            this.renderPreview(matrices);
+            this.renderPreview();
             this.rendered = true;
         }
 
         if (!this.seedQueueEntry.isReady()) {
-            this.renderLoading(matrices);
+            this.renderLoading();
         } else if ((SeedQueue.config.chunkMapFreezing != -1 && !this.seedQueueEntry.isLocked()) || this.isOnlyDrawingChunkmap()) {
-            this.renderChunkmap(matrices);
+            this.renderChunkmap();
         }
         this.wall.resetOrtho();
     }
 
-    private void renderPreview(MatrixStack matrices) {
+    private void renderPreview() {
         SeedQueuePreviewFrameBuffer frameBuffer = this.seedQueueEntry.getFrameBuffer();
         if (this.previewProperties != null) {
             if (this.shouldRedrawPreview() && frameBuffer.updateRenderData(this.worldRenderer)) {
-                this.redrawPreview(matrices, frameBuffer);
+                this.redrawPreview(frameBuffer);
             } else {
                 this.buildChunks();
             }
@@ -136,13 +136,13 @@ public class SeedQueuePreview extends DrawableHelper {
         frameBuffer.draw(this.width, this.height);
     }
 
-    private void redrawPreview(MatrixStack matrices, SeedQueuePreviewFrameBuffer frameBuffer) {
+    private void redrawPreview(SeedQueuePreviewFrameBuffer frameBuffer) {
         frameBuffer.beginWrite();
         // related to WorldRendererMixin#doNotClearOnWallScreen
         // the suppressed call usually renders a light blue overlay over the entire screen,
         // instead we draw it onto the preview ourselves
-        DrawableHelper.fill(matrices, 0, 0, this.width, this.height, -5323025);
-        this.run(properties -> properties.render(matrices, 0, 0, 0.0f, this.buttons, this.width, this.height, this.showMenu));
+        DrawableHelper.fill(0, 0, this.width, this.height, -5323025);
+        this.run(properties -> properties.render(0, 0, 0.0f, this.buttons, this.width, this.height, this.showMenu));
         frameBuffer.endWrite();
 
         this.client.getFramebuffer().beginWrite(false);
@@ -151,16 +151,16 @@ public class SeedQueuePreview extends DrawableHelper {
         this.lastPreviewFrame = this.wall.frame;
     }
 
-    private void renderLoading(MatrixStack matrices) {
+    private void renderLoading() {
         // see LevelLoadingScreen#render
-        this.renderChunkmap(matrices);
-        this.drawCenteredString(matrices, this.client.textRenderer, MathHelper.clamp(this.tracker.getProgressPercentage(), 0, 100) + "%", 45, this.height - 75 - 9 / 2 - 30, 16777215);
-        this.drawCenteredString(matrices, this.client.textRenderer, this.seedString, 45, this.height - 75 - 9 / 2 - 50, 16777215);
+        this.renderChunkmap();
+        this.drawCenteredString(this.client.textRenderer, MathHelper.clamp(this.tracker.getProgressPercentage(), 0, 100) + "%", 45, this.height - 75 - 9 / 2 - 30, 16777215);
+        this.drawCenteredString(this.client.textRenderer, this.seedString, 45, this.height - 75 - 9 / 2 - 50, 16777215);
     }
 
-    private void renderChunkmap(MatrixStack matrices) {
+    private void renderChunkmap() {
         WorldGenerationProgressTracker tracker = this.seedQueueEntry.isLocked() ? this.tracker : ((SQWorldGenerationProgressTracker) this.tracker).seedQueue$getFrozenCopy().orElse(this.tracker);
-        LevelLoadingScreen.drawChunkMap(matrices, tracker, 45, this.height - 75 + 30, 2, 0);
+        LevelLoadingScreen.drawChunkMap(tracker, 45, this.height - 75 + 30, 2, 0);
     }
 
     public void build() {
@@ -239,14 +239,14 @@ public class SeedQueuePreview extends DrawableHelper {
 
     public void printDebug() {
         if (this.worldRenderer != null) {
-            SeedQueue.LOGGER.info("SeedQueue-DEBUG | Instance: {}, Seed: {}, World Gen %: {}, Chunks: {} ({}), locked: {}, paused: {}, ready: {}", this.seedQueueEntry.getSession().getDirectoryName(), this.seedQueueEntry.getServer().getSaveProperties().getGeneratorOptions().getSeed(), this.seedQueueEntry.getProgressPercentage(), this.worldRenderer.getChunksDebugString(), this.worldRenderer.isTerrainRenderComplete(), this.seedQueueEntry.isLocked(), this.seedQueueEntry.isPaused(), this.seedQueueEntry.isReady());
+            SeedQueue.LOGGER.info("SeedQueue-DEBUG | Instance: {}, Seed: {}, World Gen %: {}, Chunks: {} ({}), locked: {}, paused: {}, ready: {}", this.seedQueueEntry.getServer().getLevelName(), this.seedQueueEntry.getLevelInfo().getSeed(), this.seedQueueEntry.getProgressPercentage(), this.worldRenderer.getChunksDebugString(), this.worldRenderer.isTerrainRenderComplete(), this.seedQueueEntry.isLocked(), this.seedQueueEntry.isPaused(), this.seedQueueEntry.isReady());
         } else {
-            SeedQueue.LOGGER.info("SeedQueue-DEBUG | Instance: {}, Seed: {}, World Gen %: {}", this.seedQueueEntry.getSession().getDirectoryName(), this.seedQueueEntry.getServer().getSaveProperties().getGeneratorOptions().getSeed(), this.seedQueueEntry.getProgressPercentage());
+            SeedQueue.LOGGER.info("SeedQueue-DEBUG | Instance: {}, Seed: {}, World Gen %: {}", this.seedQueueEntry.getServer().getLevelName(), this.seedQueueEntry.getLevelInfo().getSeed(), this.seedQueueEntry.getProgressPercentage());
         }
     }
 
     public void printStacktrace() {
-        SeedQueue.LOGGER.info("SeedQueue-DEBUG | Instance: {}, Stacktrace: {}", this.seedQueueEntry.getSession().getDirectoryName(), Arrays.toString(this.seedQueueEntry.getServer().getThread().getStackTrace()));
+        SeedQueue.LOGGER.info("SeedQueue-DEBUG | Instance: {}, Stacktrace: {}", this.seedQueueEntry.getServer().getLevelName(), Arrays.toString(this.seedQueueEntry.getServer().getThread().getStackTrace()));
     }
 
     public SeedQueueEntry getSeedQueueEntry() {
@@ -262,7 +262,7 @@ public class SeedQueuePreview extends DrawableHelper {
     public static void renderBackground(int width, int height) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder buffer = tessellator.getBuffer();
-        MinecraftClient.getInstance().getTextureManager().bindTexture(BACKGROUND_TEXTURE);
+        MinecraftClient.getInstance().getTextureManager().bindTexture(BACKGROUND_LOCATION);
         RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
         buffer.begin(7, VertexFormats.POSITION_TEXTURE_COLOR);
         buffer.vertex(0.0, height, 0.0).texture(0.0F, height / 32.0F).color(64, 64, 64, 255).next();

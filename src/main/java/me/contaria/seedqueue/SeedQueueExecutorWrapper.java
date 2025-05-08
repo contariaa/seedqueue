@@ -3,10 +3,7 @@ package me.contaria.seedqueue;
 import me.contaria.seedqueue.mixin.accessor.UtilAccessor;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinWorkerThread;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -90,12 +87,28 @@ public class SeedQueueExecutorWrapper implements Executor {
      */
     public synchronized static void shutdownExecutors() {
         if (SEEDQUEUE_BACKGROUND_EXECUTOR != null) {
-            UtilAccessor.seedQueue$attemptShutdown(SEEDQUEUE_BACKGROUND_EXECUTOR);
+            shutdown(SEEDQUEUE_BACKGROUND_EXECUTOR);
             SEEDQUEUE_BACKGROUND_EXECUTOR = null;
         }
         if (SEEDQUEUE_WALL_EXECUTOR != null) {
-            UtilAccessor.seedQueue$attemptShutdown(SEEDQUEUE_WALL_EXECUTOR);
+            shutdown(SEEDQUEUE_WALL_EXECUTOR);
             SEEDQUEUE_WALL_EXECUTOR = null;
+        }
+    }
+
+    // see Util#shutdownServerWorkerExecutor
+    private static void shutdown(ExecutorService executor) {
+        executor.shutdown();
+
+        boolean shutdown;
+        try {
+            shutdown = executor.awaitTermination(3L, TimeUnit.SECONDS);
+        } catch (InterruptedException var2) {
+            shutdown = false;
+        }
+
+        if (!shutdown) {
+            executor.shutdownNow();
         }
     }
 }

@@ -31,7 +31,6 @@ import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.render.BufferBuilderStorage;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.util.Window;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.Identifier;
@@ -124,7 +123,7 @@ public class SeedQueueWallScreen extends Screen {
     }
 
     @Override
-    public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
+    public void render(int mouseX, int mouseY, float delta) {
         this.frame++;
 
         SeedQueueProfiler.swap("wall");
@@ -134,19 +133,19 @@ public class SeedQueueWallScreen extends Screen {
 
         SeedQueueProfiler.swap("background");
         if (this.background != null) {
-            this.drawAnimatedTexture(this.background, matrices, 0, 0, this.width, this.height);
+            this.drawAnimatedTexture(this.background, 0, 0, this.width, this.height);
         } else {
-            this.renderBackground(matrices);
+            this.renderBackground();
         }
 
         SeedQueueProfiler.swap("render_main");
         for (int i = 0; i < this.layout.main.size(); i++) {
-            this.renderInstance(this.mainPreviews[i], this.layout.main, i, matrices);
+            this.renderInstance(this.mainPreviews[i], this.layout.main, i);
         }
         if (this.layout.locked != null && this.lockedPreviews != null) {
             SeedQueueProfiler.swap("render_locked");
             for (int i = 0; i < this.layout.locked.size(); i++) {
-                this.renderInstance(i < this.lockedPreviews.size() ? this.lockedPreviews.get(i) : null, this.layout.locked, i, matrices);
+                this.renderInstance(i < this.lockedPreviews.size() ? this.lockedPreviews.get(i) : null, this.layout.locked, i);
             }
         }
         int i = 0;
@@ -154,7 +153,7 @@ public class SeedQueueWallScreen extends Screen {
         for (Layout.Group group : this.layout.preparing) {
             int offset = i;
             for (; i < group.size(); i++) {
-                this.renderInstance(i < this.preparingPreviews.size() ? this.preparingPreviews.get(i) : null, group, i - offset, matrices);
+                this.renderInstance(i < this.preparingPreviews.size() ? this.preparingPreviews.get(i) : null, group, i - offset);
             }
         }
 
@@ -174,17 +173,17 @@ public class SeedQueueWallScreen extends Screen {
 
         if (this.overlay != null) {
             SeedQueueProfiler.swap("overlay");
-            this.drawAnimatedTexture(this.overlay, matrices, 0, 0, this.width, this.height);
+            this.drawAnimatedTexture(this.overlay, 0, 0, this.width, this.height);
         }
 
         if (this.debugHud != null) {
             SeedQueueProfiler.swap("fps_graph");
-            ((DebugHudAccessor) this.debugHud).seedQueue$drawMetricsData(matrices, this.client.getMetricsData(), 0, this.width / 2, true);
+            ((DebugHudAccessor) this.debugHud).seedQueue$drawMetricsData(this.client.getMetricsData(), 0, this.width / 2, true);
         }
         SeedQueueProfiler.pop();
     }
 
-    private void renderInstance(SeedQueuePreview instance, Layout.Group group, int index, MatrixStack matrices) {
+    private void renderInstance(SeedQueuePreview instance, Layout.Group group, int index) {
         Layout.Pos pos = group.getPos(index);
         if (pos == null) {
             return;
@@ -195,7 +194,7 @@ public class SeedQueueWallScreen extends Screen {
 
         if (instance == null || (SeedQueue.config.waitForPreviewSetup && !instance.isRenderingReady())) {
             SeedQueueProfiler.swap("instance_background");
-            this.renderInstanceBackground(group, index, matrices);
+            this.renderInstanceBackground(group, index);
             if (instance != null) {
                 SeedQueueProfiler.swap("build_chunks");
                 instance.build();
@@ -211,31 +210,31 @@ public class SeedQueueWallScreen extends Screen {
 
         SeedQueueProfiler.swap("render_preview");
         SeedQueueWallScreen.startRenderingPreview();
-        instance.render(matrices);
+        instance.render();
         SeedQueueWallScreen.stopRenderingPreview();
 
         SeedQueueProfiler.swap("instance_overlay");
-        this.renderInstanceOverlay(group, matrices);
+        this.renderInstanceOverlay(group);
 
         SeedQueueProfiler.swap("reset_viewport");
         this.resetViewport();
 
         if (instance.getSeedQueueEntry().isLocked()) {
             SeedQueueProfiler.swap("lock");
-            this.drawLock(matrices, pos, instance.getLockTexture());
+            this.drawLock(pos, instance.getLockTexture());
         }
         SeedQueueProfiler.pop();
     }
 
-    private void renderInstanceBackground(Layout.Group group, int index, MatrixStack matrices) {
+    private void renderInstanceBackground(Layout.Group group, int index) {
         if (!group.instanceBackground) {
             return;
         }
         if (!SeedQueue.config.waitForPreviewSetup && this.layout.main == group && !this.blockedMainPositions.contains(index)) {
             this.renderPreviewBackground();
-            this.renderInstanceOverlay(group, matrices);
+            this.renderInstanceOverlay(group);
         } else if (this.instanceBackground != null) {
-            this.drawAnimatedTexture(this.instanceBackground, matrices, 0, 0, this.width, this.height);
+            this.drawAnimatedTexture(this.instanceBackground, 0, 0, this.width, this.height);
         }
     }
 
@@ -252,17 +251,16 @@ public class SeedQueueWallScreen extends Screen {
         this.resetOrtho();
     }
 
-    private void renderInstanceOverlay(Layout.Group group, MatrixStack matrices) {
+    private void renderInstanceOverlay(Layout.Group group) {
         if (group.instanceOverlay && this.instanceOverlay != null) {
-            this.drawAnimatedTexture(this.instanceOverlay, matrices, 0, 0, this.width, this.height);
+            this.drawAnimatedTexture(this.instanceOverlay, 0, 0, this.width, this.height);
         }
     }
 
-    private void drawLock(MatrixStack matrices, Layout.Pos pos, LockTexture lock) {
+    private void drawLock(Layout.Pos pos, LockTexture lock) {
         this.setOrtho(this.client.getWindow().getFramebufferWidth(), this.client.getWindow().getFramebufferHeight());
         this.client.getTextureManager().bindTexture(lock.getId());
-        DrawableHelper.drawTexture(
-                matrices,
+        DrawableHelper.blit(
                 pos.x,
                 pos.y,
                 0.0f,
@@ -276,11 +274,10 @@ public class SeedQueueWallScreen extends Screen {
     }
 
     @SuppressWarnings("SameParameterValue")
-    private void drawAnimatedTexture(AnimatedTexture texture, MatrixStack matrices, int x, int y, int width, int height) {
+    private void drawAnimatedTexture(AnimatedTexture texture, int x, int y, int width, int height) {
         this.client.getTextureManager().bindTexture(texture.getId());
         RenderSystem.enableBlend();
-        DrawableHelper.drawTexture(
-                matrices,
+        DrawableHelper.blit(
                 x,
                 y,
                 0.0f,
@@ -328,7 +325,6 @@ public class SeedQueueWallScreen extends Screen {
         this.currentPos = null;
     }
 
-    @SuppressWarnings("deprecation")
     protected void setOrtho(double width, double height) {
         // see GameRenderer#render or WorldPreview#render
         // we need this to reset RenderSystem.ortho after simulating a different window size

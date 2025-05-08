@@ -32,7 +32,7 @@ public abstract class SoundSystemMixin implements SQSoundSystem {
                     ),
                     @At(
                             value = "INVOKE",
-                            target = "Lnet/minecraft/client/sound/SoundLoader;loadStreamed(Lnet/minecraft/util/Identifier;Z)Ljava/util/concurrent/CompletableFuture;"
+                            target = "Lnet/minecraft/client/sound/SoundLoader;loadStreamed(Lnet/minecraft/util/Identifier;)Ljava/util/concurrent/CompletableFuture;"
                     )
             }
     )

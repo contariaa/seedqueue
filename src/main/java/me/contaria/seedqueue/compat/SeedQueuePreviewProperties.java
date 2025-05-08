@@ -14,11 +14,11 @@ import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.DiffuseLighting;
 import net.minecraft.client.render.entity.PlayerModelPart;
 import net.minecraft.client.util.Window;
+import net.minecraft.client.util.math.Matrix4f;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.util.math.Vector3f;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.network.Packet;
-import net.minecraft.util.math.Matrix4f;
 
 import java.util.Queue;
 
@@ -58,7 +58,7 @@ public class SeedQueuePreviewProperties extends WorldPreviewProperties {
         rotationMatrix.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion(camera.getYaw() + 180.0f));
 
         Matrix4f projectionMatrix = new Matrix4f();
-        client.gameRenderer.loadProjectionMatrix(projectionMatrix);
+        client.gameRenderer.method_22709(projectionMatrix);
 
         SeedQueueProfiler.swap("camera_update");
         camera.update(client.world, client.player, camera.isThirdPerson(), ((CameraAccessor) camera).seedQueue$isInverseView(), 1.0f);

@@ -7,8 +7,6 @@ import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.gui.hud.ChatHud;
 import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.client.gui.hud.SubtitlesHud;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.Text;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -21,10 +19,10 @@ public abstract class InGameHudMixin extends DrawableHelper {
             method = "render",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/hud/SubtitlesHud;render(Lnet/minecraft/client/util/math/MatrixStack;)V"
+                    target = "Lnet/minecraft/client/gui/hud/SubtitlesHud;render()V"
             )
     )
-    private boolean doNotRenderSubtitlesOnWall(SubtitlesHud subtitlesHud, MatrixStack matrices) {
+    private boolean doNotRenderSubtitlesOnWall(SubtitlesHud subtitlesHud) {
         return !SeedQueue.isOnWall();
     }
 
@@ -32,10 +30,10 @@ public abstract class InGameHudMixin extends DrawableHelper {
             method = "render",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/hud/ChatHud;render(Lnet/minecraft/client/util/math/MatrixStack;I)V"
+                    target = "Lnet/minecraft/client/gui/hud/ChatHud;render(I)V"
             )
     )
-    private boolean doNotRenderChatOnWall(ChatHud chatHud, MatrixStack matrices, int i) {
+    private boolean doNotRenderChatOnWall(ChatHud chatHud, int i) {
         return !SeedQueue.isOnWall();
     }
 
@@ -43,32 +41,32 @@ public abstract class InGameHudMixin extends DrawableHelper {
             method = "render",
             at = @At(
                     value = "FIELD",
-                    target = "Lnet/minecraft/client/gui/hud/InGameHud;overlayMessage:Lnet/minecraft/text/Text;",
+                    target = "Lnet/minecraft/client/gui/hud/InGameHud;overlayRemaining:I",
                     opcode = Opcodes.GETFIELD,
                     ordinal = 0
             )
     )
-    private Text doNotRenderOverlayMessageOnWall(Text overlayMessage) {
+    private int doNotRenderOverlayMessageOnWall(int overlayRemaining) {
         if (SeedQueue.isOnWall()) {
-            return null;
+            return 0;
         }
-        return overlayMessage;
+        return overlayRemaining;
     }
 
     @ModifyExpressionValue(
             method = "render",
             at = @At(
                     value = "FIELD",
-                    target = "Lnet/minecraft/client/gui/hud/InGameHud;title:Lnet/minecraft/text/Text;",
+                    target = "Lnet/minecraft/client/gui/hud/InGameHud;titleRemainTicks:I",
                     opcode = Opcodes.GETFIELD,
                     ordinal = 0
             )
     )
-    private Text doNotRenderTitleMessageOnWall(Text title) {
+    private int doNotRenderTitleMessageOnWall(int titleRemainTicks) {
         if (SeedQueue.isOnWall()) {
-            return null;
+            return 0;
         }
-        return title;
+        return titleRemainTicks;
     }
 
     @ModifyVariable(

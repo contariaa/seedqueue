@@ -1,29 +1,27 @@
 package me.contaria.seedqueue.gui.wall;
 
-import me.contaria.speedrunapi.util.TextUtil;
+import net.minecraft.client.resource.language.I18n;
 import net.minecraft.client.toast.Toast;
 import net.minecraft.client.toast.ToastManager;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.Text;
 import net.minecraft.util.Util;
 
 public class SeedQueueBenchmarkToast implements Toast {
     private final SeedQueueWallScreen wall;
-    private final Text title;
+    private final String title;
 
     private boolean finished;
     private boolean fadeOut;
 
     public SeedQueueBenchmarkToast(SeedQueueWallScreen wall) {
         this.wall = wall;
-        this.title = TextUtil.translatable("seedqueue.menu.benchmark.title");
+        this.title = I18n.translate("seedqueue.menu.benchmark.title");
     }
 
     @Override
-    public Visibility draw(MatrixStack matrices, ToastManager manager, long startTime) {
+    public Visibility draw(ToastManager manager, long startTime) {
         manager.getGame().getTextureManager().bindTexture(TOASTS_TEX);
-        manager.drawTexture(matrices, 0, 0, 0, 0, this.getWidth(), this.getHeight());
-        manager.getGame().textRenderer.draw(matrices, this.title, 7.0f, 7.0f, 0xFFFF00 | 0xFF000000);
+        manager.blit(0, 0, 0, 0, this.getWidth(), this.getHeight());
+        manager.getGame().textRenderer.draw(this.title, 7.0f, 7.0f, 0xFFFF00 | 0xFF000000);
 
         this.finished |= !this.wall.isBenchmarking();
 
@@ -33,8 +31,16 @@ public class SeedQueueBenchmarkToast implements Toast {
 
         double time = (this.finished ? this.wall.benchmarkFinish : Util.getMeasuringTimeMs()) - this.wall.benchmarkStart;
         double rps = Math.round(this.wall.benchmarkedSeeds / (time / 10000.0)) / 10.0;
-        manager.getGame().textRenderer.draw(matrices, TextUtil.translatable("seedqueue.menu.benchmark.result", this.wall.benchmarkedSeeds, Math.round(time / 1000.0), rps), 7.0f, 18.0f, -1);
+        manager.getGame().textRenderer.draw(I18n.translate("seedqueue.menu.benchmark.result", this.wall.benchmarkedSeeds, Math.round(time / 1000.0), rps), 7.0f, 18.0f, -1);
 
         return this.fadeOut ? Visibility.HIDE : Visibility.SHOW;
+    }
+
+    public int getWidth() {
+        return 160;
+    }
+
+    public int getHeight() {
+        return 32;
     }
 }

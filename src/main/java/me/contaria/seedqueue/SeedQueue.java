@@ -6,7 +6,6 @@ import me.contaria.seedqueue.debug.SeedQueueSystemInfo;
 import me.contaria.seedqueue.debug.SeedQueueWatchdog;
 import me.contaria.seedqueue.gui.wall.SeedQueueWallScreen;
 import me.contaria.seedqueue.mixin.accessor.MinecraftClientAccessor;
-import me.contaria.seedqueue.mixin.accessor.MinecraftServerAccessor;
 import me.contaria.seedqueue.sounds.SeedQueueSounds;
 import me.contaria.speedrunapi.util.TextUtil;
 import me.voidxwalker.autoreset.AttemptTracker;
@@ -100,11 +99,10 @@ public class SeedQueue implements ClientModInitializer {
         // standardsettings can cause the current screen to be re-initialized,
         // so we open an intermission screen to avoid atum reset logic being called twice
         MinecraftClient.getInstance().openScreen(new ProgressScreen());
-        MinecraftClient.getInstance().createWorld(
-                currentEntry.getSession().getDirectoryName(),
-                currentEntry.getServer().getSaveProperties().getLevelInfo(),
-                ((MinecraftServerAccessor) currentEntry.getServer()).seedQueue$getDimensionTracker(),
-                currentEntry.getServer().getSaveProperties().getGeneratorOptions()
+        MinecraftClient.getInstance().startIntegratedServer(
+                currentEntry.getServer().getLevelName(),
+                currentEntry.getServer().getServerName(),
+                currentEntry.getLevelInfo()
         );
         currentEntry = null;
     }
@@ -356,7 +354,8 @@ public class SeedQueue implements ClientModInitializer {
         LOGGER.info("Clearing SeedQueue...");
 
         Screen screen = MinecraftClient.getInstance().currentScreen;
-        MinecraftClient.getInstance().setScreenAndRender(new SaveLevelScreen(TextUtil.translatable("seedqueue.menu.clearing")));
+        MinecraftClient.getInstance().openScreen(new SaveLevelScreen(TextUtil.translatable("seedqueue.menu.clearing")));
+        ((MinecraftClientAccessor) MinecraftClient.getInstance()).seedQueue$render(false);
 
         synchronized (LOCK) {
             if (currentEntry != null && !currentEntry.isLoaded()) {

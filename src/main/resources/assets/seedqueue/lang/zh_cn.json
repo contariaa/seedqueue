@@ -56,7 +56,7 @@
   "speedrunapi.config.seedqueue.option.maxConcurrently.description": "可以同时生成的最大种子数。",
   "speedrunapi.config.seedqueue.option.maxConcurrently_onWall": "种子加载上限（墙界面）",
   "speedrunapi.config.seedqueue.option.maxConcurrently_onWall.description": "在墙界面上生成的种子的最大数量。",
-  "speedrunapi.config.seedqueue.option.maxWorldGenerationPercentage": "最大世界加载进度%",
+  "speedrunapi.config.seedqueue.option.maxWorldGenerationPercentage": "最大世界加载进度%%",
   "speedrunapi.config.seedqueue.option.maxWorldGenerationPercentage.description": "在未锁定前每个种子的世界最大加载进度。\n请注意, 在停止加载前仍需等待世界预览启动完成",
   "speedrunapi.config.seedqueue.option.maxWorldGenerationPercentage.value": "%s%%",
   "speedrunapi.config.seedqueue.option.resumeOnFilledQueue": "恢复世界加载",

@@ -19,8 +19,10 @@ public abstract class ChunkRenderManagerMixin {
             method = "<init>",
             at = @At(
                     value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuilder;<init>(Lme/jellysquid/mods/sodium/client/model/vertex/type/ChunkVertexType;Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderBackend;)V"
-            )
+                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuilder;<init>(Lme/jellysquid/mods/sodium/client/gl/attribute/GlVertexFormat;Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderBackend;)V",
+                    remap = false
+            ),
+            remap = true
     )
     private void profileCreateChunkBuilder(CallbackInfo ci) {
         SeedQueueProfiler.push("create_chunk_builder");
@@ -30,9 +32,9 @@ public abstract class ChunkRenderManagerMixin {
             method = "<init>",
             at = @At(
                     value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuilder;init(Lnet/minecraft/client/world/ClientWorld;Lme/jellysquid/mods/sodium/client/render/chunk/passes/BlockRenderPassManager;)V",
-                    remap = true
-            )
+                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuilder;init(Lnet/minecraft/client/world/ClientWorld;Lme/jellysquid/mods/sodium/client/render/chunk/passes/BlockRenderPassManager;)V"
+            ),
+            remap = true
     )
     private void profileInitChunkBuilder(CallbackInfo ci) {
         SeedQueueProfiler.swap("init_chunk_builder");
@@ -42,8 +44,10 @@ public abstract class ChunkRenderManagerMixin {
             method = "<init>",
             at = @At(
                     value = "FIELD",
-                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderManager;dirty:Z"
-            )
+                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderManager;dirty:Z",
+                    remap = false
+            ),
+            remap = true
     )
     private void profileCreateRenderLists(CallbackInfo ci) {
         SeedQueueProfiler.swap("create_render_lists");
@@ -51,19 +55,8 @@ public abstract class ChunkRenderManagerMixin {
 
     @Inject(
             method = "<init>",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/cull/graph/ChunkGraphCuller;<init>(Lnet/minecraft/world/World;I)V",
-                    remap = true
-            )
-    )
-    private void profileCreateGraphCuller(CallbackInfo ci) {
-        SeedQueueProfiler.swap("create_graph_culler");
-    }
-
-    @Inject(
-            method = "<init>",
-            at = @At("TAIL")
+            at = @At("TAIL"),
+            remap = true
     )
     private void profilePop_init(CallbackInfo ci) {
         SeedQueueProfiler.pop();
@@ -105,7 +98,7 @@ public abstract class ChunkRenderManagerMixin {
             method = "updateChunks",
             at = @At(
                     value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderBackend;upload(Lme/jellysquid/mods/sodium/client/gl/device/CommandList;Ljava/util/Iterator;)V"
+                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderBackend;upload(Ljava/util/Iterator;)V"
             )
     )
     private void profileBackendUpload(CallbackInfo ci) {
@@ -124,7 +117,7 @@ public abstract class ChunkRenderManagerMixin {
             method = "destroy",
             at = @At(
                     value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderManager;reset()V"
+                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderManager;resetGraph()V"
             )
     )
     private void profileReset(CallbackInfo ci) {
@@ -173,7 +166,7 @@ public abstract class ChunkRenderManagerMixin {
     }
 
     @Inject(
-            method = "reset",
+            method = "resetGraph",
             at = @At(
                     value = "FIELD",
                     target = "Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderManager;rebuildQueue:Lit/unimi/dsi/fastutil/objects/ObjectArrayFIFOQueue;",
@@ -185,7 +178,7 @@ public abstract class ChunkRenderManagerMixin {
     }
 
     @Inject(
-            method = "reset",
+            method = "resetGraph",
             at = @At(
                     value = "FIELD",
                     target = "Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderManager;visibleBlockEntities:Lit/unimi/dsi/fastutil/objects/ObjectList;",
@@ -197,7 +190,7 @@ public abstract class ChunkRenderManagerMixin {
     }
 
     @Inject(
-            method = "reset",
+            method = "resetGraph",
             at = @At(
                     value = "FIELD",
                     target = "Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderManager;chunkRenderLists:[Lme/jellysquid/mods/sodium/client/render/chunk/lists/ChunkRenderList;",
@@ -209,7 +202,7 @@ public abstract class ChunkRenderManagerMixin {
     }
 
     @Inject(
-            method = "reset",
+            method = "resetGraph",
             at = @At(
                     value = "FIELD",
                     target = "Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderManager;tickableChunks:Lit/unimi/dsi/fastutil/objects/ObjectList;",
@@ -221,7 +214,7 @@ public abstract class ChunkRenderManagerMixin {
     }
 
     @Inject(
-            method = "reset",
+            method = "resetGraph",
             at = @At("RETURN")
     )
     private void profilePop_reset(CallbackInfo ci) {
@@ -229,61 +222,36 @@ public abstract class ChunkRenderManagerMixin {
     }
 
     @Inject(
-            method = "update",
+            method = "updateGraph",
             at = @At(
                     value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderManager;reset()V",
-                    remap = false
+                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderManager;init(Lnet/minecraft/client/render/Camera;Lme/jellysquid/mods/sodium/client/util/math/FrustumExtended;IZ)V"
             ),
             remap = true
     )
-    private void profileReset2(CallbackInfo ci) {
-        SeedQueueProfiler.push("reset");
+    private void profileInit(CallbackInfo ci) {
+        SeedQueueProfiler.push("init");
     }
 
     @Inject(
-            method = "update",
+            method = "updateGraph",
             at = @At(
                     value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderManager;unloadPending()V",
-                    remap = false
+                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderManager;init(Lnet/minecraft/client/render/Camera;Lme/jellysquid/mods/sodium/client/util/math/FrustumExtended;IZ)V",
+                    shift = At.Shift.AFTER
             ),
             remap = true
     )
-    private void profileUnloadPending(CallbackInfo ci) {
-        SeedQueueProfiler.swap("unload_pending");
+    private void profileIterateQueue(CallbackInfo ci) {
+        SeedQueueProfiler.swap("iterate_queue");
     }
 
     @Inject(
-            method = "update",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderManager;setup(Lnet/minecraft/client/render/Camera;)V"
-            ),
-            remap = true
-    )
-    private void profileSetup(CallbackInfo ci) {
-        SeedQueueProfiler.swap("setup");
-    }
-
-    @Inject(
-            method = "update",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderManager;iterateChunks(Lnet/minecraft/client/render/Camera;Lme/jellysquid/mods/sodium/client/util/math/FrustumExtended;IZ)V"
-            ),
-            remap = true
-    )
-    private void profileIterateChunks(CallbackInfo ci) {
-        SeedQueueProfiler.swap("iterate_chunks");
-    }
-
-    @Inject(
-            method = "update",
+            method = "updateGraph",
             at = @At("RETURN"),
             remap = true
     )
-    private void profilePop_update(CallbackInfo ci) {
+    private void profilePop_updateGraph(CallbackInfo ci) {
         SeedQueueProfiler.pop();
     }
 }

@@ -53,7 +53,7 @@
   "speedrunapi.config.seedqueue.option.maxConcurrently.description": "Maksymalna ilośc seedów która może się generować w tym samym czasie.",
   "speedrunapi.config.seedqueue.option.maxConcurrently_onWall": "Maksymalna Ilość Generujących Się Seedów (Ściana)",
   "speedrunapi.config.seedqueue.option.maxConcurrently_onWall.description": "Maksymalna ilośc seedów która może się generować w tym samym czasie na Ekranie Ściany.",
-  "speedrunapi.config.seedqueue.option.maxWorldGenerationPercentage": "Maksymalny % Generowania Świata",
+  "speedrunapi.config.seedqueue.option.maxWorldGenerationPercentage": "Maksymalny %% Generowania Świata",
   "speedrunapi.config.seedqueue.option.maxWorldGenerationPercentage.description": "Zatrzymuje generowanie świata po osiągnięciu ustawionego procentu, chyba że jest na nim Kłódka.\nNależy pamiętać, że mimo to będzie czekać na skonfigurowanie „WorldPreview” przed zatrzymaniem generacji.",
   "speedrunapi.config.seedqueue.option.maxWorldGenerationPercentage.value": "%s%%",
   "speedrunapi.config.seedqueue.option.useWall": "Użyj Ekranu Ściany",

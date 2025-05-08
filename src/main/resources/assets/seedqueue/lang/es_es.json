@@ -56,7 +56,7 @@
   "speedrunapi.config.seedqueue.option.maxConcurrently.description": "Máxima cuota de semillas que pueden estar generandose a la vez mientras estás jugando, no confundir con Cola o con Wall.",
   "speedrunapi.config.seedqueue.option.maxConcurrently_onWall": "Máx Cuota Generación Wall",
   "speedrunapi.config.seedqueue.option.maxConcurrently_onWall.description": "Máxima cantidad de semillas que pueden estar generandose a la vez mientras estás en la ventana de la Wall, no confundir con In-Game o Cola.",
-  "speedrunapi.config.seedqueue.option.maxWorldGenerationPercentage": "Máx % de Mundo Generado",
+  "speedrunapi.config.seedqueue.option.maxWorldGenerationPercentage": "Máx %% de Mundo Generado",
   "speedrunapi.config.seedqueue.option.maxWorldGenerationPercentage.description": "Detiene la generación del mundo cuando llega al porcentaje que hayas puesto a no ser que lo hayas bloqueado.\nNota: Esta configuración esperará a WorldPreview antes de detener la generación.",
   "speedrunapi.config.seedqueue.option.maxWorldGenerationPercentage.value": "%s%%",
   "speedrunapi.config.seedqueue.option.resumeOnFilledQueue": "Resumir en Cola llena",

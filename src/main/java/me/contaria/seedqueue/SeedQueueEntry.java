@@ -14,18 +14,20 @@ import me.contaria.seedqueue.mixin.accessor.MinecraftServerAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.WorldGenerationProgressTracker;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.util.UserCache;
-import net.minecraft.world.level.storage.LevelStorage;
+import net.minecraft.world.WorldSaveHandler;
+import net.minecraft.world.level.LevelInfo;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Stores the {@link MinecraftServer} and any other resources related to a seed in the queue.
  */
 public class SeedQueueEntry {
-    private final MinecraftServer server;
+    private final IntegratedServer server;
 
-    private final LevelStorage.Session session;
-    private final MinecraftClient.IntegratedResourceManager resourceManager;
+    private final WorldSaveHandler worldSaveHandler;
+    private final LevelInfo levelInfo;
 
     // will be created lazily when using wall, see MinecraftClientMixin
     @Nullable
@@ -59,10 +61,10 @@ public class SeedQueueEntry {
      */
     public int mainPosition = -1;
 
-    public SeedQueueEntry(MinecraftServer server, LevelStorage.Session session, MinecraftClient.IntegratedResourceManager resourceManager, @Nullable YggdrasilAuthenticationService yggdrasilAuthenticationService, @Nullable MinecraftSessionService minecraftSessionService, @Nullable GameProfileRepository gameProfileRepository, @Nullable UserCache userCache) {
+    public SeedQueueEntry(IntegratedServer server, LevelInfo levelInfo, WorldSaveHandler worldSaveHandler, @Nullable YggdrasilAuthenticationService yggdrasilAuthenticationService, @Nullable MinecraftSessionService minecraftSessionService, @Nullable GameProfileRepository gameProfileRepository, @Nullable UserCache userCache) {
         this.server = server;
-        this.session = session;
-        this.resourceManager = resourceManager;
+        this.levelInfo = levelInfo;
+        this.worldSaveHandler = worldSaveHandler;
         this.yggdrasilAuthenticationService = yggdrasilAuthenticationService;
         this.minecraftSessionService = minecraftSessionService;
         this.gameProfileRepository = gameProfileRepository;
@@ -71,16 +73,16 @@ public class SeedQueueEntry {
         ((SQMinecraftServer) server).seedQueue$setEntry(this);
     }
 
-    public MinecraftServer getServer() {
+    public IntegratedServer getServer() {
         return this.server;
     }
 
-    public LevelStorage.Session getSession() {
-        return this.session;
+    public WorldSaveHandler getWorldSaveHandler() {
+        return this.worldSaveHandler;
     }
 
-    public MinecraftClient.IntegratedResourceManager getResourceManager() {
-        return this.resourceManager;
+    public LevelInfo getLevelInfo() {
+        return this.levelInfo;
     }
 
     public @Nullable YggdrasilAuthenticationService getYggdrasilAuthenticationService() {
@@ -337,7 +339,7 @@ public class SeedQueueEntry {
     public synchronized void load() {
         synchronized (this.server) {
             if (this.discarded) {
-                throw new IllegalStateException("Tried to load \"" + this.session.getDirectoryName() + "\" but it has already been discarded!");
+                throw new IllegalStateException("Tried to load \"" + this.server.getLevelName() + "\" but it has already been discarded!");
             }
 
             this.loaded = true;
@@ -364,11 +366,11 @@ public class SeedQueueEntry {
     public synchronized void discard() {
         synchronized (this.server) {
             if (this.discarded) {
-                SeedQueue.LOGGER.warn("Tried to discard \"{}\" but it has already been discarded!", this.session.getDirectoryName());
+                SeedQueue.LOGGER.warn("Tried to discard \"{}\" but it has already been discarded!", this.server.getLevelName());
                 return;
             }
 
-            SeedQueue.LOGGER.info("Discarding \"{}\"...", this.session.getDirectoryName());
+            SeedQueue.LOGGER.info("Discarding \"{}\"...", this.server.getLevelName());
 
             this.discarded = true;
 

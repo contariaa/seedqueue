@@ -1,7 +1,6 @@
 package me.contaria.seedqueue.mixin.client;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
-import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
@@ -9,10 +8,8 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.authlib.GameProfileRepository;
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
-import com.mojang.datafixers.util.Function4;
 import me.contaria.seedqueue.SeedQueue;
 import me.contaria.seedqueue.SeedQueueEntry;
-import me.contaria.seedqueue.SeedQueueException;
 import me.contaria.seedqueue.SeedQueueExecutorWrapper;
 import me.contaria.seedqueue.compat.ModCompat;
 import me.contaria.seedqueue.compat.SeedQueuePreviewProperties;
@@ -29,19 +26,14 @@ import net.minecraft.client.gui.WorldGenerationProgressTracker;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.sound.MusicTracker;
 import net.minecraft.client.sound.SoundManager;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtIo;
-import net.minecraft.resource.DataPackSettings;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.resource.ServerResourceManager;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.WorldGenerationProgressListenerFactory;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.util.UserCache;
-import net.minecraft.util.WorldSavePath;
-import net.minecraft.util.registry.RegistryTracker;
-import net.minecraft.world.SaveProperties;
+import net.minecraft.world.WorldSaveHandler;
+import net.minecraft.world.level.LevelInfo;
+import net.minecraft.world.level.LevelProperties;
 import net.minecraft.world.level.storage.LevelStorage;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
@@ -49,20 +41,14 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Slice;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.io.File;
 import java.net.Proxy;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Optional;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BooleanSupplier;
-import java.util.function.Function;
 
 @Mixin(value = MinecraftClient.class, priority = 500)
 public abstract class MinecraftClientMixin {
@@ -75,7 +61,7 @@ public abstract class MinecraftClientMixin {
     public Screen currentScreen;
 
     @Inject(
-            method = "createWorld",
+            method = "startIntegratedServer",
             at = @At("TAIL")
     )
     private void startSeedQueue(CallbackInfo ci) {
@@ -87,35 +73,49 @@ public abstract class MinecraftClientMixin {
     }
 
     @WrapOperation(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/world/level/storage/LevelStorage;createSession(Ljava/lang/String;)Lnet/minecraft/world/level/storage/LevelStorage$Session;"
+                    target = "Lnet/minecraft/world/WorldSaveHandler;readProperties()Lnet/minecraft/world/level/LevelProperties;"
             )
     )
-    private LevelStorage.Session loadSession(LevelStorage levelStorage, String directoryName, Operation<LevelStorage.Session> original) {
-        if (!SeedQueue.inQueue() && SeedQueue.currentEntry != null) {
-            return SeedQueue.currentEntry.getSession();
+    private LevelProperties doNotReadLevelProperties(WorldSaveHandler worldSaveHandler, Operation<LevelProperties> original) {
+        if (SeedQueue.inQueue() || SeedQueue.currentEntry != null) {
+            return null;
         }
-        return original.call(levelStorage, directoryName);
+        return original.call(worldSaveHandler);
     }
 
     @WrapOperation(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/MinecraftClient;createIntegratedResourceManager(Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/world/level/storage/LevelStorage$Session;)Lnet/minecraft/client/MinecraftClient$IntegratedResourceManager;"
+                    target = "Lnet/minecraft/world/level/storage/LevelStorage;createSaveHandler(Ljava/lang/String;Lnet/minecraft/server/MinecraftServer;)Lnet/minecraft/world/WorldSaveHandler;"
             )
     )
-    private MinecraftClient.IntegratedResourceManager loadIntegratedResourceManager(MinecraftClient client, RegistryTracker.Modifiable modifiable, Function<LevelStorage.Session, DataPackSettings> function, Function4<LevelStorage.Session, RegistryTracker.Modifiable, ResourceManager, DataPackSettings, SaveProperties> function4, boolean bl, LevelStorage.Session session, Operation<MinecraftClient.IntegratedResourceManager> original) {
+    private WorldSaveHandler loadWorldSaveHandler(LevelStorage storage, String name, MinecraftServer server, Operation<WorldSaveHandler> original) {
         if (!SeedQueue.inQueue() && SeedQueue.currentEntry != null) {
-            return SeedQueue.currentEntry.getResourceManager();
+            return SeedQueue.currentEntry.getWorldSaveHandler();
         }
-        return original.call(client, modifiable, function, function4, bl, session);
+        return original.call(storage, name, server);
     }
 
     @WrapOperation(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
+            at = @At(
+                    value = "NEW",
+                    target = "(Lnet/minecraft/world/level/LevelProperties;)Lnet/minecraft/world/level/LevelInfo;"
+            )
+    )
+    private LevelInfo loadIntegratedResourceManager(LevelProperties properties, Operation<LevelInfo> original) {
+        if (!SeedQueue.inQueue() && SeedQueue.currentEntry != null) {
+            return SeedQueue.currentEntry.getLevelInfo();
+        }
+        return original.call(properties);
+    }
+
+    @WrapOperation(
+            method = "startIntegratedServer",
             at = @At(
                     value = "NEW",
                     target = "(Ljava/net/Proxy;Ljava/lang/String;)Lcom/mojang/authlib/yggdrasil/YggdrasilAuthenticationService;",
@@ -136,7 +136,7 @@ public abstract class MinecraftClientMixin {
     }
 
     @WrapOperation(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
             at = @At(
                     value = "INVOKE",
                     target = "Lcom/mojang/authlib/yggdrasil/YggdrasilAuthenticationService;createMinecraftSessionService()Lcom/mojang/authlib/minecraft/MinecraftSessionService;",
@@ -157,7 +157,7 @@ public abstract class MinecraftClientMixin {
     }
 
     @WrapOperation(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
             at = @At(
                     value = "INVOKE",
                     target = "Lcom/mojang/authlib/yggdrasil/YggdrasilAuthenticationService;createProfileRepository()Lcom/mojang/authlib/GameProfileRepository;",
@@ -178,7 +178,7 @@ public abstract class MinecraftClientMixin {
     }
 
     @WrapOperation(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
             at = @At(
                     value = "NEW",
                     target = "(Lcom/mojang/authlib/GameProfileRepository;Ljava/io/File;)Lnet/minecraft/util/UserCache;"
@@ -199,43 +199,44 @@ public abstract class MinecraftClientMixin {
     }
 
     @WrapOperation(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
             at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/server/MinecraftServer;startServer(Ljava/util/function/Function;)Lnet/minecraft/server/MinecraftServer;"
+                    value = "NEW",
+                    target = "Lnet/minecraft/server/integrated/IntegratedServer;"
             )
     )
-    private MinecraftServer loadServer(Function<Thread, MinecraftServer> serverFactory, Operation<MinecraftServer> original, @Local UserCache userCache, @Local MinecraftSessionService sessionService, @Local GameProfileRepository gameProfileRepo) {
+    private IntegratedServer loadServer(MinecraftClient client, String levelName, String displayName, LevelInfo levelInfo, YggdrasilAuthenticationService authService, MinecraftSessionService sessionService, GameProfileRepository gameProfileRepo, UserCache userCache, WorldGenerationProgressListenerFactory worldGenerationProgressListenerFactory, Operation<IntegratedServer> original, @Local UserCache newUserCache, @Local MinecraftSessionService newSessionService, @Local GameProfileRepository newGameProfileRepo) {
         if (!SeedQueue.inQueue() && SeedQueue.currentEntry != null) {
             // see "loadUserCache"
-            MinecraftServer server = SeedQueue.currentEntry.getServer();
+            IntegratedServer server = SeedQueue.currentEntry.getServer();
             if (SeedQueue.currentEntry.getMinecraftSessionService() == null) {
-                ((MinecraftServerAccessor) server).seedQueue$setSessionService(sessionService);
+                ((MinecraftServerAccessor) server).seedQueue$setSessionService(newSessionService);
             }
             if (SeedQueue.currentEntry.getGameProfileRepository() == null) {
-                ((MinecraftServerAccessor) server).seedQueue$setGameProfileRepo(gameProfileRepo);
+                ((MinecraftServerAccessor) server).seedQueue$setGameProfileRepo(newGameProfileRepo);
             }
             if (SeedQueue.currentEntry.getUserCache() == null) {
-                ((MinecraftServerAccessor) server).seedQueue$setUserCache(userCache);
+                ((MinecraftServerAccessor) server).seedQueue$setUserCache(newUserCache);
             }
             server.getThread().setPriority(Thread.NORM_PRIORITY);
             return server;
         }
-        return original.call(serverFactory);
+        return original.call(client, levelName, displayName, levelInfo, authService, sessionService, gameProfileRepo, userCache, worldGenerationProgressListenerFactory);
     }
 
     @WrapOperation(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
             at = @At(
                     value = "FIELD",
                     target = "Lnet/minecraft/client/MinecraftClient;server:Lnet/minecraft/server/integrated/IntegratedServer;",
                     opcode = Opcodes.PUTFIELD
             )
     )
-    private void queueServer(MinecraftClient client, IntegratedServer server, Operation<Void> original, @Local LevelStorage.Session session, @Local MinecraftClient.IntegratedResourceManager resourceManager, @Local YggdrasilAuthenticationService yggdrasilAuthenticationService, @Local MinecraftSessionService minecraftSessionService, @Local GameProfileRepository gameProfileRepository, @Local UserCache userCache) {
+    private void queueServer(MinecraftClient client, IntegratedServer server, Operation<Void> original, @Local(argsOnly = true) LevelInfo levelInfo, @Local WorldSaveHandler worldSaveHandler, @Local YggdrasilAuthenticationService yggdrasilAuthenticationService, @Local MinecraftSessionService minecraftSessionService, @Local GameProfileRepository gameProfileRepository, @Local UserCache userCache) {
         if (SeedQueue.inQueue()) {
             ((SQMinecraftServer) server).seedQueue$setExecutor(SeedQueueExecutorWrapper.SEEDQUEUE_EXECUTOR);
-            SeedQueue.add(new SeedQueueEntry(server, session, resourceManager, yggdrasilAuthenticationService, minecraftSessionService, gameProfileRepository, userCache));
+            SeedQueue.add(new SeedQueueEntry(server, levelInfo, worldSaveHandler, yggdrasilAuthenticationService, minecraftSessionService, gameProfileRepository, userCache));
+            server.start();
             return;
         }
         original.call(client, server);
@@ -243,6 +244,17 @@ public abstract class MinecraftClientMixin {
             ((SQMinecraftServer) server).seedQueue$resetExecutor();
             SeedQueue.currentEntry.load();
         }
+    }
+
+    @WrapWithCondition(
+            method = "startIntegratedServer",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/server/integrated/IntegratedServer;start()V"
+            )
+    )
+    private boolean doNotStartServerTwice(IntegratedServer server) {
+        return SeedQueue.currentEntry == null;
     }
 
     @WrapOperation(
@@ -264,7 +276,7 @@ public abstract class MinecraftClientMixin {
     }
 
     @Inject(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
             at = @At(
                     value = "INVOKE",
                     target = "Ljava/util/concurrent/atomic/AtomicReference;get()Ljava/lang/Object;",
@@ -284,56 +296,11 @@ public abstract class MinecraftClientMixin {
         }
     }
 
-    @WrapOperation(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lorg/apache/logging/log4j/Logger;warn(Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;)V",
-                    ordinal = 0,
-                    remap = false
-            )
-    )
-    private void throwSeedQueueException_createSessionFailure(Logger logger, String message, Object p0, Object p1, Operation<Void> original) {
-        if (SeedQueue.inQueue()) {
-            throw new SeedQueueException("Failed to read level data!", (Throwable) p1);
-        }
-        original.call(logger, message, p0, p1);
-    }
-
-    @WrapOperation(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lorg/apache/logging/log4j/Logger;warn(Ljava/lang/String;Ljava/lang/Throwable;)V",
-                    remap = false
-            )
-    )
-    private void throwSeedQueueException_loadDataPacksFailure(Logger logger, String message, Throwable t, Operation<Void> original) {
-        if (SeedQueue.inQueue()) {
-            throw new SeedQueueException("Failed to load datapacks!", t);
-        }
-        original.call(logger, message, t);
-    }
-
     @Inject(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/MinecraftClient;showExperimentalWarning(Lnet/minecraft/client/MinecraftClient$WorldLoadAction;Ljava/lang/String;ZLjava/lang/Runnable;)V"
-            )
-    )
-    private void throwSeedQueueException_legacyWorldLoadFailure(CallbackInfo ci) {
-        if (SeedQueue.inQueue()) {
-            throw new SeedQueueException("Failed to load legacy world!");
-        }
-    }
-
-    @Inject(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
-            at = @At(
-                    value = "FIELD",
-                    target = "Lnet/minecraft/client/MinecraftClient;isIntegratedServerRunning:Z",
-                    opcode = Opcodes.PUTFIELD
+                    target = "Lnet/minecraft/server/integrated/IntegratedServer;start()V"
             ),
             cancellable = true
     )
@@ -344,7 +311,7 @@ public abstract class MinecraftClientMixin {
     }
 
     @WrapWithCondition(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/client/MinecraftClient;disconnect()V"
@@ -355,7 +322,7 @@ public abstract class MinecraftClientMixin {
     }
 
     @WrapWithCondition(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
             at = @At(
                     value = "INVOKE",
                     target = "Ljava/util/concurrent/atomic/AtomicReference;set(Ljava/lang/Object;)V",
@@ -366,50 +333,8 @@ public abstract class MinecraftClientMixin {
         return !SeedQueue.inQueue();
     }
 
-    @WrapOperation(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/world/level/storage/LevelStorage$Session;backupLevelDataFile(Lnet/minecraft/util/registry/RegistryTracker;Lnet/minecraft/world/SaveProperties;)V"
-            )
-    )
-    private void cancelSessionLevelDatInit(LevelStorage.Session session, RegistryTracker tracker, SaveProperties properties, Operation<Void> original) {
-        if (SeedQueue.inQueue()) {
-            // since this world is guaranteed to be new,
-            // we can optimize level.dat creation by saving the file
-            // without backing up the old file (which doesn't exist)
-            Path path = session.getDirectory(WorldSavePath.LEVEL_DAT);
-            CompoundTag data = properties.cloneWorldTag(tracker, null);
-            CompoundTag tag = new CompoundTag();
-            tag.put("Data", data);
-
-            try {
-                NbtIo.writeCompressed(tag, Files.newOutputStream(path));
-            } catch (Exception e) {
-                SeedQueue.LOGGER.error("Failed to save level {}", path, e);
-            }
-            return;
-        }
-        if (SeedQueue.currentEntry != null) {
-            // already saved level.dat on SeedQueueThread
-            return;
-        }
-        original.call(session, tracker, properties);
-    }
-
     @WrapWithCondition(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/resource/ServerResourceManager;loadRegistryTags()V"
-            )
-    )
-    private boolean cancelLoadingRegistryTags(ServerResourceManager manager) {
-        return !SeedQueue.inQueue();
-    }
-
-    @WrapWithCondition(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/block/entity/SkullBlockEntity;setUserCache(Lnet/minecraft/util/UserCache;)V"
@@ -420,7 +345,7 @@ public abstract class MinecraftClientMixin {
     }
 
     @WrapWithCondition(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/block/entity/SkullBlockEntity;setSessionService(Lcom/mojang/authlib/minecraft/MinecraftSessionService;)V"
@@ -431,7 +356,7 @@ public abstract class MinecraftClientMixin {
     }
 
     @WrapWithCondition(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/util/UserCache;setUseRemote(Z)V"
@@ -442,7 +367,7 @@ public abstract class MinecraftClientMixin {
     }
 
     @WrapWithCondition(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/client/MinecraftClient;openScreen(Lnet/minecraft/client/gui/screen/Screen;)V",
@@ -466,7 +391,7 @@ public abstract class MinecraftClientMixin {
     }
 
     @Inject(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/client/MinecraftClient;render(Z)V"
@@ -488,48 +413,8 @@ public abstract class MinecraftClientMixin {
         previewProperties.load();
     }
 
-    @ModifyExpressionValue(
-            method = "createIntegratedResourceManager",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/util/Util;getServerWorkerExecutor()Ljava/util/concurrent/Executor;"
-            )
-    )
-    private Executor useSeedQueueExecutorForCreatingResourcesInQueue(Executor serverWorkerExecutor) {
-        if (SeedQueue.inQueue()) {
-            return SeedQueueExecutorWrapper.SEEDQUEUE_EXECUTOR;
-        }
-        return serverWorkerExecutor;
-    }
-
-    @ModifyArg(
-            method = "createIntegratedResourceManager",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/resource/ServerResourceManager;reload(Ljava/util/List;Lnet/minecraft/server/command/CommandManager$RegistrationEnvironment;ILjava/util/concurrent/Executor;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"
-            ),
-            index = 4
-    )
-    private Executor useSeedQueueExecutorForCreatingResourcesInQueue2(Executor executor) {
-        if (SeedQueue.inQueue()) {
-            return SeedQueueExecutorWrapper.SEEDQUEUE_EXECUTOR;
-        }
-        return executor;
-    }
-
-    @WrapWithCondition(
-            method = "createIntegratedResourceManager",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/client/MinecraftClient;runTasks(Ljava/util/function/BooleanSupplier;)V"
-            )
-    )
-    private boolean doNotRunTasksOnSeedQueueThread(MinecraftClient client, BooleanSupplier booleanSupplier) {
-        return !SeedQueue.inQueue();
-    }
-
     @Inject(
-            method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V",
+            method = "startIntegratedServer",
             at = @At("TAIL")
     )
     private void pingSeedQueueThreadOnLoadingWorld(CallbackInfo ci) {
@@ -551,7 +436,6 @@ public abstract class MinecraftClientMixin {
     @WrapWithCondition(
             method = {
                     "reset",
-                    "setScreenAndRender"
             },
             at = @At(
                     value = "INVOKE",
@@ -603,12 +487,32 @@ public abstract class MinecraftClientMixin {
         }
     }
 
-    @ModifyReturnValue(
-            method = "shouldMonitorTickDuration",
-            at = @At("RETURN")
+    @ModifyExpressionValue(
+            method = "render",
+            at = {
+                    @At(
+                            value = "FIELD",
+                            target = "Lnet/minecraft/client/options/GameOptions;debugEnabled:Z"
+                    ),
+                    @At(
+                            value = "FIELD",
+                            target = "Lnet/minecraft/client/options/GameOptions;debugProfilerEnabled:Z"
+                    )
+            }
     )
-    private boolean showDebugMenuOnWall(boolean shouldMonitorTickDuration) {
-        return shouldMonitorTickDuration || (SeedQueue.isOnWall() && SeedQueue.config.showDebugMenu);
+    private boolean showDebugMenuOnWall(boolean enabled) {
+        return enabled || (SeedQueue.isOnWall() && SeedQueue.config.showDebugMenu);
+    }
+
+    @ModifyExpressionValue(
+            method = "render",
+            at = @At(
+                    value = "FIELD",
+                    target = "Lnet/minecraft/client/options/GameOptions;hudHidden:Z"
+            )
+    )
+    private boolean showDebugMenuOnWall2(boolean hudHidden) {
+        return hudHidden && !(SeedQueue.isOnWall() && SeedQueue.config.showDebugMenu);
     }
 
     @WrapWithCondition(
@@ -665,14 +569,6 @@ public abstract class MinecraftClientMixin {
             return;
         }
         original.call(soundManager);
-    }
-
-    @ModifyReturnValue(
-            method = "isFabulousGraphicsOrBetter",
-            at = @At("RETURN")
-    )
-    private static boolean doNotAllowFabulousGraphicsOnWall(boolean isFabulousGraphicsOrBetter) {
-        return isFabulousGraphicsOrBetter && !SeedQueue.isOnWall();
     }
 
     @Inject(

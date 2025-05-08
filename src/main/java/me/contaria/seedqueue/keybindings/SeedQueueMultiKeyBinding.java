@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.resource.language.I18n;
 import net.minecraft.client.util.InputUtil;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,16 +16,16 @@ public class SeedQueueMultiKeyBinding {
     private final String translationKey;
     private final String category;
 
-    private InputUtil.Key primaryKey;
-    private final List<InputUtil.Key> secondaryKeys;
-    private final List<InputUtil.Key> blockingKeys;
+    private InputUtil.KeyCode primaryKey;
+    private final List<InputUtil.KeyCode> secondaryKeys;
+    private final List<InputUtil.KeyCode> blockingKeys;
 
     public SeedQueueMultiKeyBinding(String translationKey) {
         this(translationKey, "seedqueue.key.categories.builtin");
     }
 
     public SeedQueueMultiKeyBinding(String translationKey, String category) {
-        this(translationKey, category, InputUtil.UNKNOWN_KEY);
+        this(translationKey, category, InputUtil.UNKNOWN_KEYCODE);
     }
 
     public SeedQueueMultiKeyBinding(String translationKey, int code) {
@@ -39,7 +40,7 @@ public class SeedQueueMultiKeyBinding {
         this(translationKey, category, type.createFromCode(code));
     }
 
-    protected SeedQueueMultiKeyBinding(String translationKey, String category, InputUtil.Key primaryKey) {
+    protected SeedQueueMultiKeyBinding(String translationKey, String category, InputUtil.KeyCode primaryKey) {
         this.translationKey = translationKey;
         this.category = category;
         this.primaryKey = primaryKey;
@@ -48,7 +49,7 @@ public class SeedQueueMultiKeyBinding {
     }
 
     public boolean matchesKey(int keyCode, int scanCode) {
-        return keyCode == InputUtil.UNKNOWN_KEY.getCode() ? this.matchesPrimary(InputUtil.Type.SCANCODE, scanCode) : this.matchesPrimary(InputUtil.Type.KEYSYM, keyCode) && this.areSecondaryKeysDown() && this.areBlockingKeysNotDown();
+        return keyCode == InputUtil.UNKNOWN_KEYCODE.getKeyCode() ? this.matchesPrimary(InputUtil.Type.SCANCODE, scanCode) : this.matchesPrimary(InputUtil.Type.KEYSYM, keyCode) && this.areSecondaryKeysDown() && this.areBlockingKeysNotDown();
     }
 
     public boolean matchesMouse(int code) {
@@ -56,12 +57,12 @@ public class SeedQueueMultiKeyBinding {
     }
 
     private boolean matchesPrimary(InputUtil.Type type, int code) {
-        return this.primaryKey.getCategory() == type && this.primaryKey.getCode() == code;
+        return this.primaryKey.getCategory() == type && this.primaryKey.getKeyCode() == code;
     }
 
     private boolean areSecondaryKeysDown() {
-        for (InputUtil.Key key : this.secondaryKeys) {
-            if (!InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), key.getCode())) {
+        for (InputUtil.KeyCode key : this.secondaryKeys) {
+            if (!InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), key.getKeyCode())) {
                 return false;
             }
         }
@@ -69,8 +70,8 @@ public class SeedQueueMultiKeyBinding {
     }
 
     private boolean areBlockingKeysNotDown() {
-        for (InputUtil.Key key : this.blockingKeys) {
-            if (InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), key.getCode())) {
+        for (InputUtil.KeyCode key : this.blockingKeys) {
+            if (InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), key.getKeyCode())) {
                 return false;
             }
         }
@@ -85,19 +86,19 @@ public class SeedQueueMultiKeyBinding {
         return this.category;
     }
 
-    public InputUtil.Key getPrimaryKey() {
+    public InputUtil.KeyCode getPrimaryKey() {
         return this.primaryKey;
     }
 
-    public void setPrimaryKey(InputUtil.Key key) {
+    public void setPrimaryKey(InputUtil.KeyCode key) {
         this.primaryKey = key;
     }
 
-    public void setSecondaryKey(int index, InputUtil.Key key) {
+    public void setSecondaryKey(int index, InputUtil.KeyCode key) {
         this.secondaryKeys.set(index, key);
     }
 
-    public void addSecondaryKey(InputUtil.Key key) {
+    public void addSecondaryKey(InputUtil.KeyCode key) {
         this.secondaryKeys.add(key);
     }
 
@@ -106,15 +107,15 @@ public class SeedQueueMultiKeyBinding {
         this.secondaryKeys.remove(index);
     }
 
-    public List<InputUtil.Key> getSecondaryKeys() {
+    public List<InputUtil.KeyCode> getSecondaryKeys() {
         return this.secondaryKeys;
     }
 
-    public void setBlockingKey(int index, InputUtil.Key key) {
+    public void setBlockingKey(int index, InputUtil.KeyCode key) {
         this.blockingKeys.set(index, key);
     }
 
-    public void addBlockingKey(InputUtil.Key key) {
+    public void addBlockingKey(InputUtil.KeyCode key) {
         this.blockingKeys.add(key);
     }
 
@@ -122,27 +123,27 @@ public class SeedQueueMultiKeyBinding {
         this.blockingKeys.remove(index);
     }
 
-    public List<InputUtil.Key> getBlockingKeys() {
+    public List<InputUtil.KeyCode> getBlockingKeys() {
         return this.blockingKeys;
     }
 
     public JsonElement toJson() {
         if (this.secondaryKeys.isEmpty() && this.blockingKeys.isEmpty()) {
-            return new JsonPrimitive(this.primaryKey.getTranslationKey());
+            return new JsonPrimitive(this.primaryKey.getName());
         }
 
         JsonObject jsonObject = new JsonObject();
-        jsonObject.add("primary", new JsonPrimitive(this.primaryKey.getTranslationKey()));
+        jsonObject.add("primary", new JsonPrimitive(this.primaryKey.getName()));
 
         JsonArray secondary = new JsonArray();
-        for (InputUtil.Key key : this.secondaryKeys) {
-            secondary.add(new JsonPrimitive(key.getTranslationKey()));
+        for (InputUtil.KeyCode key : this.secondaryKeys) {
+            secondary.add(new JsonPrimitive(key.getName()));
         }
         jsonObject.add("secondary", secondary);
 
         JsonArray blocking = new JsonArray();
-        for (InputUtil.Key key : this.blockingKeys) {
-            blocking.add(new JsonPrimitive(key.getTranslationKey()));
+        for (InputUtil.KeyCode key : this.blockingKeys) {
+            blocking.add(new JsonPrimitive(key.getName()));
         }
         jsonObject.add("blocking", blocking);
 
@@ -158,18 +159,18 @@ public class SeedQueueMultiKeyBinding {
         this.blockingKeys.clear();
 
         if (!jsonElement.isJsonObject()) {
-            this.setPrimaryKey(InputUtil.fromTranslationKey(jsonElement.getAsString()));
+            this.setPrimaryKey(InputUtil.fromName(jsonElement.getAsString()));
             return;
         }
 
         JsonObject jsonObject = jsonElement.getAsJsonObject();
 
-        this.setPrimaryKey(InputUtil.fromTranslationKey(jsonObject.get("primary").getAsString()));
+        this.setPrimaryKey(InputUtil.fromName(jsonObject.get("primary").getAsString()));
         for (JsonElement key : jsonObject.getAsJsonArray("secondary")) {
-            this.addSecondaryKey(InputUtil.fromTranslationKey(key.getAsString()));
+            this.addSecondaryKey(InputUtil.fromName(key.getAsString()));
         }
         for (JsonElement key : jsonObject.getAsJsonArray("blocking")) {
-            this.addBlockingKey(InputUtil.fromTranslationKey(key.getAsString()));
+            this.addBlockingKey(InputUtil.fromName(key.getAsString()));
         }
     }
 }

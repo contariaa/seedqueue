@@ -4,7 +4,6 @@ import com.mojang.authlib.GameProfileRepository;
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.UserCache;
-import net.minecraft.util.registry.RegistryTracker;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.gen.Accessor;
@@ -25,7 +24,4 @@ public interface MinecraftServerAccessor {
     @Mutable
     @Accessor("sessionService")
     void seedQueue$setSessionService(MinecraftSessionService sessionService);
-
-    @Accessor("dimensionTracker")
-    RegistryTracker.Modifiable seedQueue$getDimensionTracker();
 }

@@ -80,19 +80,8 @@ public abstract class WorldRendererMixin {
             method = "reload",
             at = @At("HEAD")
     )
-    private void profileTransparencyShader(CallbackInfo ci) {
-        SeedQueueProfiler.push("transparency_shader");
-    }
-
-    @Inject(
-            method = "reload",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/client/world/ClientWorld;reloadColor()V"
-            )
-    )
     private void profileReloadColor(CallbackInfo ci) {
-        SeedQueueProfiler.swap("reload_color");
+        SeedQueueProfiler.push("reload_color");
     }
 
     @Inject(

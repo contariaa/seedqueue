@@ -44,21 +44,19 @@
 	],
 	"depends": {
 		"fabricloader": ">=0.16.0",
-		"minecraft": "1.16.1",
+		"minecraft": "1.15.2",
 		"speedrunapi": ">=2.0-beta.1",
 		"atum": ">=2.3"
 	},
 	"breaks": {
 		"worldpreview": "<6.3.0",
-		"antiresourcereload": "<5.0.0",
 		"chunkcacher": "<1.4.0",
 		"standardsettings": "<2.0",
 		"setspawnmod": "<4.0.0",
 		"fast_reset": "<2.0",
 		"state-output": "<1.2",
-		"speedrunigt": "<15.0",
-		"sodium": [ "v1", "v2", "<2.4.0" ],
-		"sodiummac": [ "v2", "v3", "<3.4.0" ],
+		"speedrunigt": "<14.2",
+		"sodium": [ "v1", "v2", "<1.1.1" ],
 		"sleepbackground": "<4.0"
 	}
 }

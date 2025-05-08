@@ -22,7 +22,6 @@
     "client.debug.DebugHudMixin",
     "client.levellist.LevelStorageMixin",
     "client.profiling.WorldRendererMixin",
-    "client.render.LevelLoadingScreenMixin",
     "client.render.MinecraftClientMixin",
     "client.sounds.SoundManagerMixin",
     "client.sounds.SoundSystemMixin",
@@ -31,15 +30,14 @@
     "compat.atum.CreateWorldScreenMixin",
     "compat.atum.KeyboardMixin",
     "compat.sodium.ChunkBuilder$WorkerRunnableMixin",
-    "compat.sodium.ChunkBuilder$WorkerRunnableMixin2",
     "compat.sodium.ChunkBuilderMixin",
     "compat.sodium.ChunkRenderManagerMixin",
     "compat.sodium.ChunkRenderShaderBackendMixin",
     "compat.sodium.profiling.ChunkBuilderMixin",
-    "compat.sodium.profiling.ChunkRenderCacheLocalMixin",
     "compat.sodium.profiling.ChunkRenderManagerMixin",
     "compat.sodium.profiling.MultidrawChunkRenderBackendMixin",
     "compat.sodium.profiling.SodiumWorldRendererMixin",
+    "compat.speedrunigt.MinecraftClientMixin",
     "compat.standardsettings.MinecraftClientMixin",
     "compat.worldpreview.ThreadedAnvilChunkStorageMixin",
     "compat.worldpreview.WorldPreviewMixin",
@@ -52,9 +50,11 @@
     "server.optimization.ThreadedAnvilChunkStorageMixin",
     "server.parity.EntityMixin",
     "server.synchronization.BiomeMixin",
-    "server.synchronization.DirectionTransformationMixin",
     "server.synchronization.ScheduledTickMixin",
     "server.synchronization.WeightedBlockStateProviderMixin"
   ],
-  "plugin": "me.contaria.seedqueue.SeedQueueMixinConfigPlugin"
+  "plugin": "me.contaria.seedqueue.SeedQueueMixinConfigPlugin",
+  "mixins": [
+    "compat.sodium.profiling.ChunkRenderContextMixin"
+  ]
 }
