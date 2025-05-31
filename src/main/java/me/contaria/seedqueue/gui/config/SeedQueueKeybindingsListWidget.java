@@ -64,19 +64,27 @@ public class SeedQueueKeybindingsListWidget extends ElementListWidget<SeedQueueK
 
     // copy of KeyBinding#getLocalizedName
     private static String getLocalizedName(InputUtil.KeyCode keyCode) {
-        String key = keyCode.getName();
+        String translation = null;
+
         switch (keyCode.getCategory()) {
             case KEYSYM:
-                return InputUtil.getKeycodeName(keyCode.getKeyCode());
+                translation = InputUtil.getKeycodeName(keyCode.getKeyCode());
+                break;
             case SCANCODE:
-                return InputUtil.getScancodeName(keyCode.getKeyCode());
+                translation = InputUtil.getScancodeName(keyCode.getKeyCode());
+                break;
             case MOUSE:
-                if (I18n.hasTranslation(key)) {
-                    return I18n.translate(key);
+                if (I18n.hasTranslation(keyCode.getName())) {
+                    translation = I18n.translate(keyCode.getName());
+                } else {
+                    translation = I18n.translate(InputUtil.Type.MOUSE.getName(), keyCode.getKeyCode() + 1);
                 }
-                return I18n.translate(InputUtil.Type.MOUSE.getName(), keyCode.getKeyCode() + 1);
         }
-        return I18n.translate(key);
+
+        if (translation == null) {
+            translation = I18n.translate(keyCode.getName());
+        }
+        return translation;
     }
 
     public abstract static class Entry extends ElementListWidget.Entry<Entry> {
