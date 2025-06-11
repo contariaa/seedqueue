@@ -55,6 +55,9 @@
   ],
   "plugin": "me.contaria.seedqueue.SeedQueueMixinConfigPlugin",
   "mixins": [
-    "compat.sodium.profiling.ChunkRenderContextMixin"
+    "compat.sodium.profiling.ChunkRenderContextMixin",
+    "server.synchronization.ChunkGeneratorMixin",
+    "server.synchronization.StrongholdFeatureMixin",
+    "server.synchronization.StrongholdFeatureStartMixin"
   ]
 }
