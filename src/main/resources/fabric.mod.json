@@ -57,6 +57,7 @@
 		"state-output": "<1.2",
 		"speedrunigt": "<14.2",
 		"sodium": [ "v1", "v2", "<1.1.1" ],
-		"sleepbackground": "<4.0"
+		"sleepbackground": "<4.0",
+		"lazystronghold": "<1.1.4"
 	}
 }
