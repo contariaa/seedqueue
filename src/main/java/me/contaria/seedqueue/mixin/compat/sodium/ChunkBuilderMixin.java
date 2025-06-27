@@ -32,7 +32,7 @@ public abstract class ChunkBuilderMixin {
     private AtomicBoolean running;
 
     @ModifyReturnValue(
-            method = "getOptimalThreadCount",
+            method = "getMaxThreadCount",
             at = @At("RETURN")
     )
     private static int modifyMaxThreads(int maxThreads) {
@@ -43,7 +43,7 @@ public abstract class ChunkBuilderMixin {
     }
 
     @ModifyArg(
-            method = "startWorkers",
+            method = "createWorker",
             at = @At(
                     value = "INVOKE",
                     target = "Ljava/lang/Thread;setPriority(I)V"
@@ -81,7 +81,7 @@ public abstract class ChunkBuilderMixin {
     }
 
     @WrapOperation(
-            method = "startWorkers",
+            method = "createWorker",
             at = @At(
                     value = "NEW",
                     target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuildBuffers;"

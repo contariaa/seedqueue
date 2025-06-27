@@ -27,7 +27,7 @@ public abstract class ChunkBuilderMixin {
     }
 
     @Inject(
-            method = "startWorkers",
+            method = "createWorker",
             at = @At(
                     value = "INVOKE",
                     target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuildBuffers;<init>(Lme/jellysquid/mods/sodium/client/gl/attribute/GlVertexFormat;Lme/jellysquid/mods/sodium/client/render/chunk/passes/BlockRenderPassManager;)V"
@@ -38,7 +38,7 @@ public abstract class ChunkBuilderMixin {
     }
 
     @Inject(
-            method = "startWorkers",
+            method = "createWorker",
             at = @At(
                     value = "INVOKE",
                     target = "Lme/jellysquid/mods/sodium/client/render/pipeline/context/ChunkRenderContext;<init>(Lnet/minecraft/client/MinecraftClient;)V",
@@ -50,7 +50,7 @@ public abstract class ChunkBuilderMixin {
     }
 
     @Inject(
-            method = "startWorkers",
+            method = "createWorker",
             at = @At(
                     value = "INVOKE",
                     target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuilder$WorkerRunnable;<init>(Lme/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuilder;Lme/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuildBuffers;Lme/jellysquid/mods/sodium/client/render/pipeline/context/ChunkRenderContext;)V"
@@ -61,7 +61,7 @@ public abstract class ChunkBuilderMixin {
     }
 
     @Inject(
-            method = "startWorkers",
+            method = "createWorker",
             at = @At(
                     value = "INVOKE",
                     target = "Ljava/lang/Thread;<init>(Ljava/lang/Runnable;Ljava/lang/String;)V"
@@ -72,7 +72,7 @@ public abstract class ChunkBuilderMixin {
     }
 
     @Inject(
-            method = "startWorkers",
+            method = "createWorker",
             at = @At(
                     value = "INVOKE",
                     target = "Ljava/util/List;add(Ljava/lang/Object;)Z"
