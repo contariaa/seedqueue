@@ -60,7 +60,7 @@
   "speedrunapi.config.seedqueue.option.maxWorldGenerationPercentage.description": "Zastaví generování seedu na nastaveném procentu, pokud není zamknutý.\nJe třeba zdůraznit, že seed bude stále čekat na konfiguraci WorldPreview před ukončením generace.",
   "speedrunapi.config.seedqueue.option.maxWorldGenerationPercentage.value": "%s%%",
   "speedrunapi.config.seedqueue.option.resumeOnFilledQueue": "Pokračovat po naplnění fronty",
-  "speedrunapi.config.seedqueue.option.resumeOnFilledQueue.description": "Možnost pokračovat v generování seedů po naplnění fronty.\nTato možnost má přednost před možností Max % generace světa po naplnění kapacity fronty.",
+  "speedrunapi.config.seedqueue.option.resumeOnFilledQueue.description": "Možnost pokračovat v generování seedů po naplnění fronty.\nTato možnost má přednost před možností Max %% generace světa po naplnění kapacity fronty.",
   "speedrunapi.config.seedqueue.option.chunkMapFreezing": "Chunkmap zmrazení",
   "speedrunapi.config.seedqueue.option.chunkMapFreezing.description": "Chunkmap bude zmražena po uběhnutí určených milisekund. Užitečné pro strategii \"Resetování vesnic\". Platí pouze pro světy na wall, které nejsou zamknuté.",
   "speedrunapi.config.seedqueue.option.chunkMapFreezing.value": "%sms",

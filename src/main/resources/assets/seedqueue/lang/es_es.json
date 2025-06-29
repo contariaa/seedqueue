@@ -60,7 +60,7 @@
   "speedrunapi.config.seedqueue.option.maxWorldGenerationPercentage.description": "Detiene la generación del mundo cuando llega al porcentaje que hayas puesto a no ser que lo hayas bloqueado.\nNota: Esta configuración esperará a WorldPreview antes de detener la generación.",
   "speedrunapi.config.seedqueue.option.maxWorldGenerationPercentage.value": "%s%%",
   "speedrunapi.config.seedqueue.option.resumeOnFilledQueue": "Resumir en Cola llena",
-  "speedrunapi.config.seedqueue.option.resumeOnFilledQueue.description": "Si se reanudará la generación de semillas después de que se llene la cola.\nEsto anula la opcion de Máx % de Mundo Generado una vez que se llena la capacidad de la cola.",
+  "speedrunapi.config.seedqueue.option.resumeOnFilledQueue.description": "Si se reanudará la generación de semillas después de que se llene la cola.\nEsto anula la opcion de Máx %% de Mundo Generado una vez que se llena la capacidad de la cola.",
   "speedrunapi.config.seedqueue.option.chunkMapFreezing": "Congelamiento del Chunkmap",
   "speedrunapi.config.seedqueue.option.chunkMapFreezing.description": "Congela el chunkmap dependiendo de la cantidad de milisegundos introducida. Útil para la estrategia de 'Village Resetting' (Resetear hasta encontrar una villa). Solo aplica a los mundos que no esten Bloqueados.",
   "speedrunapi.config.seedqueue.option.chunkMapFreezing.value": "%sms",
