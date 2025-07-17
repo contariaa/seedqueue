@@ -111,6 +111,9 @@ public class SeedQueuePreview extends DrawableHelper {
             if (this.previewProperties != null) {
                 this.buildChunks();
             }
+            if (!SeedQueue.config.waitForPreviewSetup) {
+                this.rendered = true;
+            }
         } else {
             this.renderPreview(matrices);
             this.rendered = true;
