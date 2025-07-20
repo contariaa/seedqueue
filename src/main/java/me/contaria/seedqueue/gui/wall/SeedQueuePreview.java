@@ -48,7 +48,7 @@ public class SeedQueuePreview extends DrawableHelper {
     private final LockTexture lockTexture;
 
     private long cooldownStart;
-    private boolean rendered;
+    private boolean allowInteractions;
     private int lastPreviewFrame;
 
     public SeedQueuePreview(SeedQueueWallScreen wall, SeedQueueEntry seedQueueEntry) {
@@ -105,7 +105,7 @@ public class SeedQueuePreview extends DrawableHelper {
 
         this.wall.setOrtho(this.width, this.height);
         if (this.isOnlyDrawingChunkmap()) {
-            this.rendered = this.isChunkmapReady();
+            this.allowInteractions = this.isChunkmapReady();
         } else if (!this.isPreviewReady()) {
             SeedQueuePreview.renderBackground(this.width, this.height);
             if (this.previewProperties != null) {
@@ -113,7 +113,7 @@ public class SeedQueuePreview extends DrawableHelper {
             }
         } else {
             this.renderPreview();
-            this.rendered = true;
+            this.allowInteractions = true;
         }
 
         if (!this.seedQueueEntry.isReady()) {
@@ -192,7 +192,8 @@ public class SeedQueuePreview extends DrawableHelper {
     }
 
     private boolean isOnlyDrawingChunkmap() {
-        return SeedQueue.config.isChunkmapResetting() && (!this.seedQueueEntry.isLocked() || this.canDrawOnlyChunkmapIfLocked());
+        return (SeedQueue.config.isChunkmapResetting() || SeedQueue.config.isChunkmapFreezeResetting()) &&
+                (!this.seedQueueEntry.isLocked() || this.canDrawOnlyChunkmapIfLocked());
     }
 
     private boolean canDrawOnlyChunkmapIfLocked() {
@@ -204,7 +205,7 @@ public class SeedQueuePreview extends DrawableHelper {
     }
 
     private boolean isChunkmapReady() {
-        return ((SQWorldGenerationProgressTracker) this.tracker).seedQueue$shouldFreeze();
+        return !SeedQueue.config.isChunkmapFreezeResetting() || ((SQWorldGenerationProgressTracker) this.tracker).seedQueue$shouldFreeze();
     }
 
     private boolean isPreviewReady() {
@@ -212,15 +213,15 @@ public class SeedQueuePreview extends DrawableHelper {
     }
 
     public boolean isRenderingReady() {
-        return SeedQueue.config.isChunkmapResetting() ? this.isChunkmapReady() : this.isPreviewReady();
+        return SeedQueue.config.isChunkmapFreezeResetting() ? this.isChunkmapReady() : this.isPreviewReady();
     }
 
-    public boolean hasRendered() {
-        return this.rendered;
+    public boolean areInteractionsAllowed() {
+        return this.allowInteractions;
     }
 
     protected boolean canReset(boolean ignoreLock, boolean ignoreResetCooldown) {
-        return this.rendered && (!this.seedQueueEntry.isLocked() || ignoreLock) && (this.isCooldownReady() || ignoreResetCooldown) && !this.seedQueueEntry.isLoaded();
+        return this.allowInteractions && (!this.seedQueueEntry.isLocked() || ignoreLock) && (this.isCooldownReady() || ignoreResetCooldown) && !this.seedQueueEntry.isLoaded();
     }
 
     protected void resetCooldown() {
@@ -228,7 +229,7 @@ public class SeedQueuePreview extends DrawableHelper {
     }
 
     protected void populateCooldownStart(long cooldownStart) {
-        if (this.rendered && this.cooldownStart == Long.MAX_VALUE) {
+        if (this.allowInteractions && this.cooldownStart == Long.MAX_VALUE) {
             this.cooldownStart = cooldownStart;
         }
     }

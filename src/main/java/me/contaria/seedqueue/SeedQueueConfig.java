@@ -236,8 +236,15 @@ public class SeedQueueConfig implements SpeedrunConfig {
         return scaleFactor;
     }
 
-    public boolean isChunkmapResetting() {
+    public boolean isChunkmapFreezeResetting() {
         return this.chunkMapFreezing != -1 &&
+                this.simulatedWindowSize.width() <= 90 &&
+                this.simulatedWindowSize.height() <= 90;
+    }
+
+    public boolean isChunkmapResetting() {
+        return !this.waitForPreviewSetup &&
+                this.maxWorldGenerationPercentage < 100 &&
                 this.simulatedWindowSize.width() <= 90 &&
                 this.simulatedWindowSize.height() <= 90;
     }

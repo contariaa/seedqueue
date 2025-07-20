@@ -470,7 +470,7 @@ public class SeedQueueWallScreen extends Screen {
             entries.remove(instance.getSeedQueueEntry());
         }
         entries.removeIf(entry -> entry.getWorldGenerationProgressTracker() == null);
-        if (SeedQueue.config.waitForPreviewSetup && !SeedQueue.config.isChunkmapResetting()) {
+        if (SeedQueue.config.waitForPreviewSetup && !SeedQueue.config.isChunkmapFreezeResetting()) {
             entries.removeIf(entry -> !entry.hasWorldPreview());
         }
         return entries;
@@ -671,7 +671,7 @@ public class SeedQueueWallScreen extends Screen {
     }
 
     private void playInstance(SeedQueuePreview instance) {
-        if (instance.hasRendered() && this.canPlayInstance(instance.getSeedQueueEntry())) {
+        if (instance.areInteractionsAllowed() && this.canPlayInstance(instance.getSeedQueueEntry())) {
             if (this.removePreview(instance)) {
                 this.playEntry(instance.getSeedQueueEntry());
                 return;
@@ -702,7 +702,7 @@ public class SeedQueueWallScreen extends Screen {
     }
 
     private void lockInstance(SeedQueuePreview instance) {
-        if (instance.hasRendered() && instance.getSeedQueueEntry().lock()) {
+        if (instance.areInteractionsAllowed() && instance.getSeedQueueEntry().lock()) {
             if (this.lockedPreviews != null) {
                 int index;
                 if (!this.layout.replaceLockedInstances && (index = ArrayUtils.indexOf(this.mainPreviews, instance)) != -1) {
@@ -821,7 +821,7 @@ public class SeedQueueWallScreen extends Screen {
     }
 
     private void scheduleJoin(SeedQueuePreview instance) {
-        if (instance.hasRendered()) {
+        if (instance.areInteractionsAllowed()) {
             this.lockInstance(instance);
             if (this.scheduleJoin(instance.getSeedQueueEntry())) {
                 this.playSound(SeedQueueSounds.SCHEDULE_JOIN);
