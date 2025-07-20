@@ -255,7 +255,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
     }
 
     public boolean isChunkmapResetting() {
-        return this.chunkMapFreezing != -1 &&
+        return !this.waitForPreviewSetup &&
                 this.simulatedWindowSize.width() <= 90 &&
                 this.simulatedWindowSize.height() <= 90;
     }

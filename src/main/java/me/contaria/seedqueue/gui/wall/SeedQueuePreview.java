@@ -8,7 +8,6 @@ import me.contaria.seedqueue.compat.SeedQueuePreviewProperties;
 import me.contaria.seedqueue.customization.LockTexture;
 import me.contaria.seedqueue.interfaces.SQWorldGenerationProgressTracker;
 import me.contaria.seedqueue.mixin.accessor.WorldRendererAccessor;
-import me.contaria.speedrunapi.config.SpeedrunConfigAPI;
 import me.voidxwalker.autoreset.Atum;
 import me.voidxwalker.autoreset.interfaces.ISeedStringHolder;
 import me.voidxwalker.worldpreview.WorldPreview;
@@ -49,7 +48,7 @@ public class SeedQueuePreview extends DrawableHelper {
     private final LockTexture lockTexture;
 
     private long cooldownStart;
-    private boolean rendered;
+    private boolean allowInteractions;
     private int lastPreviewFrame;
 
     public SeedQueuePreview(SeedQueueWallScreen wall, SeedQueueEntry seedQueueEntry) {
@@ -105,7 +104,7 @@ public class SeedQueuePreview extends DrawableHelper {
 
         this.wall.setOrtho(this.width, this.height);
         if (this.isOnlyDrawingChunkmap()) {
-            this.rendered = this.isChunkmapReady();
+            this.allowInteractions = true;
         } else if (!this.isPreviewReady()) {
             SeedQueuePreview.renderBackground(this.width, this.height);
             if (this.previewProperties != null) {
@@ -113,7 +112,7 @@ public class SeedQueuePreview extends DrawableHelper {
             }
         } else {
             this.renderPreview(matrices);
-            this.rendered = true;
+            this.allowInteractions = true;
         }
 
         if (!this.seedQueueEntry.isReady()) {
@@ -203,24 +202,20 @@ public class SeedQueuePreview extends DrawableHelper {
         return this.lastPreviewFrame == 0 || this.wall.frame - this.lastPreviewFrame >= SeedQueue.config.wallFPS / SeedQueue.config.previewFPS;
     }
 
-    private boolean isChunkmapReady() {
-        return ((SQWorldGenerationProgressTracker) this.tracker).seedQueue$shouldFreeze();
-    }
-
     private boolean isPreviewReady() {
         return this.seedQueueEntry.hasFrameBuffer() || (this.worldRenderer != null && ((WorldRendererAccessor) this.worldRenderer).seedQueue$getCompletedChunkCount() > 0);
     }
 
     public boolean isRenderingReady() {
-        return SeedQueue.config.isChunkmapResetting() ? this.isChunkmapReady() : this.isPreviewReady();
+        return this.isPreviewReady() || SeedQueue.config.isChunkmapResetting();
     }
 
-    public boolean hasRendered() {
-        return this.rendered;
+    public boolean areInteractionsAllowed() {
+        return this.allowInteractions;
     }
 
     protected boolean canReset(boolean ignoreLock, boolean ignoreResetCooldown) {
-        return this.rendered && (!this.seedQueueEntry.isLocked() || ignoreLock) && (this.isCooldownReady() || ignoreResetCooldown) && !this.seedQueueEntry.isLoaded();
+        return this.allowInteractions && (!this.seedQueueEntry.isLocked() || ignoreLock) && (this.isCooldownReady() || ignoreResetCooldown) && !this.seedQueueEntry.isLoaded();
     }
 
     protected void resetCooldown() {
@@ -228,7 +223,7 @@ public class SeedQueuePreview extends DrawableHelper {
     }
 
     protected void populateCooldownStart(long cooldownStart) {
-        if (this.rendered && this.cooldownStart == Long.MAX_VALUE) {
+        if (this.allowInteractions && this.cooldownStart == Long.MAX_VALUE) {
             this.cooldownStart = cooldownStart;
         }
     }
