@@ -12,6 +12,7 @@ import me.contaria.seedqueue.compat.ModCompat;
 import me.contaria.seedqueue.compat.SeedQueuePreviewProperties;
 import me.contaria.seedqueue.compat.SeedQueueSettingsCache;
 import me.contaria.seedqueue.customization.AnimatedTexture;
+import me.contaria.seedqueue.customization.AnimationFrameMetadata;
 import me.contaria.seedqueue.customization.Layout;
 import me.contaria.seedqueue.customization.LockTexture;
 import me.contaria.seedqueue.debug.SeedQueueProfiler;
@@ -47,10 +48,13 @@ public class SeedQueueWallScreen extends Screen {
     private static final Set<WorldRenderer> WORLD_RENDERERS = new HashSet<>();
 
     public static final Identifier CUSTOM_LAYOUT = IdentifierUtil.of("seedqueue", "wall/custom_layout.json");
-    private static final Identifier WALL_BACKGROUND = IdentifierUtil.of("seedqueue", "textures/gui/wall/background.png");
-    private static final Identifier WALL_OVERLAY = IdentifierUtil.of("seedqueue", "textures/gui/wall/overlay.png");
-    private static final Identifier INSTANCE_BACKGROUND = IdentifierUtil.of("seedqueue", "textures/gui/wall/instance_background.png");
-    private static final Identifier INSTANCE_OVERLAY = IdentifierUtil.of("seedqueue", "textures/gui/wall/instance_overlay.png");
+
+    public static final String TEXTURE_NAMESPACE = "seedqueue";
+    private static final String WALL_BACKGROUND_PREFIX = "textures/gui/wall/background";
+    private static final String WALL_OVERLAY_PREFIX = "textures/gui/wall/overlay";
+    private static final String INSTANCE_BACKGROUND_PREFIX = "textures/gui/wall/instance_background";
+    private static final String INSTANCE_OVERLAY_PREFIX = "textures/gui/wall/instance_overlay";
+    public static final String TEXTURE_SUFFIX = ".png";
 
     private static boolean renderingPreview;
 
@@ -113,10 +117,10 @@ public class SeedQueueWallScreen extends Screen {
         this.lockedPreviews = this.layout.locked != null ? new ArrayList<>() : null;
         this.preparingPreviews = new ArrayList<>();
         this.lockTextures = LockTexture.createLockTextures();
-        this.background = AnimatedTexture.of(WALL_BACKGROUND);
-        this.overlay = AnimatedTexture.of(WALL_OVERLAY);
-        this.instanceBackground = AnimatedTexture.of(INSTANCE_BACKGROUND);
-        this.instanceOverlay = AnimatedTexture.of(INSTANCE_OVERLAY);
+        this.background = AnimatedTexture.ofChunks(TEXTURE_NAMESPACE, WALL_BACKGROUND_PREFIX, TEXTURE_SUFFIX);
+        this.overlay = AnimatedTexture.ofChunks(TEXTURE_NAMESPACE, WALL_OVERLAY_PREFIX, TEXTURE_SUFFIX);
+        this.instanceBackground = AnimatedTexture.ofChunks(TEXTURE_NAMESPACE, INSTANCE_BACKGROUND_PREFIX, TEXTURE_SUFFIX);
+        this.instanceOverlay = AnimatedTexture.ofChunks(TEXTURE_NAMESPACE, INSTANCE_OVERLAY_PREFIX, TEXTURE_SUFFIX);
     }
 
     protected LockTexture getRandomLockTexture() {
@@ -260,35 +264,37 @@ public class SeedQueueWallScreen extends Screen {
 
     private void drawLock(MatrixStack matrices, Layout.Pos pos, LockTexture lock) {
         this.setOrtho(this.client.getWindow().getFramebufferWidth(), this.client.getWindow().getFramebufferHeight());
-        this.client.getTextureManager().bindTexture(lock.getId());
+        AnimationFrameMetadata frame = lock.getFrame(this.ticks);
+        this.client.getTextureManager().bindTexture(frame.animationId);
         DrawableHelper.drawTexture(
                 matrices,
                 pos.x,
                 pos.y,
                 0.0f,
-                lock.getFrameIndex(this.ticks) * pos.height,
+                frame.frameIndex * pos.height,
                 (int) Math.min(pos.width, pos.height * lock.getAspectRatio()),
                 pos.height,
                 (int) (pos.height * lock.getAspectRatio()),
-                pos.height * lock.getIndividualFrameCount()
+                pos.height * frame.animationFrameCount
         );
         this.resetOrtho();
     }
 
     @SuppressWarnings("SameParameterValue")
     private void drawAnimatedTexture(AnimatedTexture texture, MatrixStack matrices, int x, int y, int width, int height) {
-        this.client.getTextureManager().bindTexture(texture.getId());
+        AnimationFrameMetadata frame = texture.getFrame(this.ticks);
+        this.client.getTextureManager().bindTexture(frame.animationId);
         RenderSystem.enableBlend();
         DrawableHelper.drawTexture(
                 matrices,
                 x,
                 y,
                 0.0f,
-                texture.getFrameIndex(this.ticks) * height,
+                frame.frameIndex * height,
                 width,
                 height,
                 width,
-                height * texture.getIndividualFrameCount()
+                height * frame.animationFrameCount
         );
         RenderSystem.disableBlend();
     }

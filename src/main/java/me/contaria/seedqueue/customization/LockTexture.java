@@ -3,23 +3,30 @@ package me.contaria.seedqueue.customization;
 import me.contaria.seedqueue.SeedQueue;
 import me.contaria.speedrunapi.util.IdentifierUtil;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.resource.metadata.AnimationResourceMetadata;
 import net.minecraft.client.texture.NativeImage;
 import net.minecraft.util.Identifier;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class LockTexture extends AnimatedTexture {
     private final int width;
     private final int height;
 
-    public LockTexture(Identifier id) throws IOException {
-        super(id);
-        try (NativeImage image = NativeImage.read(MinecraftClient.getInstance().getResourceManager().getResource(id).getInputStream())) {
+    public LockTexture(List<Identifier> ids) throws IOException {
+        super(ids);
+        try (NativeImage image = NativeImage.read(MinecraftClient.getInstance().getResourceManager().getResource(this.ids.get(0)).getInputStream())) {
+            AnimationResourceMetadata animation = this.animations.get(0);
             this.width = image.getWidth();
-            this.height = image.getHeight() / (this.animation != null ? this.animation.getFrameIndexSet().size() : 1);
+            this.height = image.getHeight() / (animation != null ? animation.getFrameIndexSet().size() : 1);
         }
+    }
+
+    public LockTexture(Identifier id) throws IOException {
+        this(Collections.singletonList(id));
     }
 
     public double getAspectRatio() {
