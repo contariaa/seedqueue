@@ -59,6 +59,7 @@
 		"speedrunigt": "<15.0",
 		"sodium": [ "v1", "v2", "<2.4.0" ],
 		"sodiummac": [ "v2", "v3", "<3.4.0" ],
-		"sleepbackground": "<4.0"
+		"sleepbackground": "<4.0",
+		"mcsrranked": "*"
 	}
 }
