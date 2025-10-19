@@ -74,6 +74,7 @@ public class SeedQueueWallScreen extends Screen {
     private boolean playedScheduledEnterWarning;
 
     private List<LockTexture> lockTextures;
+    private int lockTexturesWeightSum;
     @Nullable
     private AnimatedTexture background;
     @Nullable
@@ -113,6 +114,9 @@ public class SeedQueueWallScreen extends Screen {
         this.lockedPreviews = this.layout.locked != null ? new ArrayList<>() : null;
         this.preparingPreviews = new ArrayList<>();
         this.lockTextures = LockTexture.createLockTextures();
+        this.lockTexturesWeightSum = this.lockTextures.stream()
+            .mapToInt(LockTexture::getWeight)
+            .reduce(0, Math::addExact);
         this.background = AnimatedTexture.of(WALL_BACKGROUND);
         this.overlay = AnimatedTexture.of(WALL_OVERLAY);
         this.instanceBackground = AnimatedTexture.of(INSTANCE_BACKGROUND);
@@ -120,7 +124,19 @@ public class SeedQueueWallScreen extends Screen {
     }
 
     protected LockTexture getRandomLockTexture() {
-        return this.lockTextures.get(this.random.nextInt(this.lockTextures.size()));
+        int target = this.random.nextInt(this.lockTexturesWeightSum);
+
+        int i = 0;
+
+        for (LockTexture lockTexture : this.lockTextures) {
+            i += lockTexture.getWeight();
+
+            if (i > target) {
+                return lockTexture;
+            }
+        }
+
+        throw new AssertionError("unreachable");
     }
 
     @Override
