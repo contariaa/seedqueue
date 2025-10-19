@@ -8,11 +8,7 @@ import net.minecraft.resource.metadata.ResourceMetadataReader;
 class LockTextureMetadata {
     public static final ResourceMetadataReader<LockTextureMetadata> READER = new Reader();
 
-    private int weight;
-
-    public int getWeight() {
-        return Math.max(1, weight);
-    }
+    public int weight;
 
     private static class Reader implements ResourceMetadataReader<LockTextureMetadata> {
         private static final Gson GSON = new Gson();

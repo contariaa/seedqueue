@@ -5,6 +5,7 @@ import me.contaria.speedrunapi.util.IdentifierUtil;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.texture.NativeImage;
 import net.minecraft.resource.Resource;
+import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
 
 import java.io.IOException;
@@ -16,7 +17,7 @@ public class LockTexture extends AnimatedTexture {
     private final int height;
     private final LockTextureMetadata metadata;
 
-    public LockTexture(Identifier id) throws IOException {
+    public LockTexture(Identifier id, int defaultWeight) throws IOException {
         super(id);
 
         Resource resource = MinecraftClient.getInstance()
@@ -34,6 +35,10 @@ public class LockTexture extends AnimatedTexture {
             metadata = new LockTextureMetadata();
         }
 
+        if (metadata.weight == 0) {
+            metadata.weight = defaultWeight;
+        }
+
         this.metadata = metadata;
     }
 
@@ -42,19 +47,36 @@ public class LockTexture extends AnimatedTexture {
     }
 
     public int getWeight() {
-        return this.metadata.getWeight();
+        return Math.max(1, this.metadata.weight);
     }
 
     public static List<LockTexture> createLockTextures() {
+        ResourceManager resourceManager = MinecraftClient.getInstance().getResourceManager();
+
         List<LockTexture> lockTextures = new ArrayList<>();
+
         Identifier lock = IdentifierUtil.of("seedqueue", "textures/gui/wall/lock.png");
+
+        int defaultWeight = 1;
+        try {
+            MainLockTextureMetadata metadata = resourceManager
+                .getResource(lock)
+                .getMetadata(MainLockTextureMetadata.READER);
+
+            if (metadata != null) {
+                defaultWeight = metadata.defaultWeight;
+            }
+        } catch (IOException e) {
+            SeedQueue.LOGGER.warn("Failed to read the main lock texture", e);
+        }
+
         do {
             try {
-                lockTextures.add(new LockTexture(lock));
+                lockTextures.add(new LockTexture(lock, defaultWeight));
             } catch (IOException e) {
                 SeedQueue.LOGGER.warn("Failed to read lock image texture: {}", lock, e);
             }
-        } while (MinecraftClient.getInstance().getResourceManager().containsResource(lock = IdentifierUtil.of("seedqueue", "textures/gui/wall/lock-" + lockTextures.size() + ".png")));
+        } while (resourceManager.containsResource(lock = IdentifierUtil.of("seedqueue", "textures/gui/wall/lock-" + lockTextures.size() + ".png")));
         return lockTextures;
     }
 }
