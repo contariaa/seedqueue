@@ -50,7 +50,7 @@
 	},
 	"breaks": {
 		"worldpreview": "<6.3.0",
-		"chunkcacher": "<1.4.0",
+		"chunkcacher": "*",
 		"standardsettings": "<2.3",
 		"setspawnmod": "<4.0.0",
 		"fast_reset": "<2.3",
