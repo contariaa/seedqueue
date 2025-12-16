@@ -14,6 +14,7 @@ public class ModCompat {
     public static final boolean HAS_STANDARDSETTINGS = FabricLoader.getInstance().isModLoaded("standardsettings");
     public static final boolean HAS_WORLDPREVIEW = FabricLoader.getInstance().isModLoaded("worldpreview");
     public static final boolean HAS_STATEOUTPUT = FabricLoader.getInstance().isModLoaded("state-output");
+    public static final boolean HAS_HERMES = FabricLoader.getInstance().isModLoaded("hermes");
 
     public static void fastReset$fastReset(MinecraftServer server) {
         if (HAS_FASTRESET) {
@@ -84,6 +85,12 @@ public class ModCompat {
     public static void worldpreview$clearFramebufferPool() {
         if (HAS_WORLDPREVIEW) {
             SeedQueuePreviewFrameBuffer.clearFramebufferPool();
+        }
+    }
+
+    public static void hermes$writeToWorldLog(MinecraftServer server, String type, long time) {
+        if (HAS_HERMES) {
+            HermesCompat.writeToWorldLog(server, type, time);
         }
     }
 }

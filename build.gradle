@@ -50,6 +50,10 @@ dependencies {
 
 	// check for latest versions at https://jitpack.io/#dev.tildejustin/state-output
 	modCompileOnly "dev.tildejustin.state-output:state-output-common:v1.2.0"
+
+	modCompileOnly ("com.github.DuncanRuns.Hermes:1.16.1:9ab2d9cc4e") {
+		transitive = false
+	}
 }
 
 processResources {
