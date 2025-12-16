@@ -319,6 +319,7 @@ public class SeedQueueEntry {
     public boolean lock() {
         if (!this.locked) {
             this.locked = true;
+            ModCompat.hermes$writeToWorldLog(this.server, "seedqueue_lock", System.currentTimeMillis());
             SeedQueue.ping();
             return true;
         }
