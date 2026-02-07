@@ -516,13 +516,20 @@ public class SeedQueueWallScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (this.isBenchmarking()) {
-            if (SeedQueueKeyBindings.cancelBenchmark.matchesMouse(button)) {
+            if (SeedQueueKeyBindings.benchmark.matchesMouse(button)) {
                 this.stopBenchmark();
             }
             return true;
         }
 
-        if (SeedQueueKeyBindings.startBenchmark.matchesMouse(button)) {
+        if (SeedQueueKeyBindings.quitWall.matchesMouse(button)) {
+            ModCompat.standardsettings$loadCache();
+            Atum.stopRunning();
+            this.client.openScreen(new TitleScreen());
+            return true;
+        }
+
+        if (SeedQueueKeyBindings.benchmark.matchesMouse(button)) {
             this.startBenchmark();
             return true;
         }
@@ -573,20 +580,20 @@ public class SeedQueueWallScreen extends Screen {
         double mouseY = this.client.mouse.getY() * window.getScaledWidth() / window.getWidth();
 
         if (this.isBenchmarking()) {
-            if (SeedQueueKeyBindings.cancelBenchmark.matchesKey(keyCode, scanCode)) {
+            if (SeedQueueKeyBindings.benchmark.matchesKey(keyCode, scanCode)) {
                 this.stopBenchmark();
             }
             return true;
         }
 
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE && Screen.hasShiftDown()) {
+        if (SeedQueueKeyBindings.quitWall.matchesKey(keyCode, scanCode)) {
             ModCompat.standardsettings$loadCache();
             Atum.stopRunning();
             this.client.openScreen(new TitleScreen());
             return true;
         }
 
-        if (SeedQueueKeyBindings.startBenchmark.matchesKey(keyCode, scanCode)) {
+        if (SeedQueueKeyBindings.benchmark.matchesKey(keyCode, scanCode)) {
             this.startBenchmark();
             return true;
         }

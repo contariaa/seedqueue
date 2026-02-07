@@ -13,6 +13,6 @@ public class SeedQueueKeyBindings {
     public static final SeedQueueMultiKeyBinding playNextLock = new SeedQueueMultiKeyBinding("seedqueue.key.playNextLock");
     public static final SeedQueueMultiKeyBinding scheduleJoin = new SeedQueueMultiKeyBinding("seedqueue.key.scheduleJoin");
     public static final SeedQueueMultiKeyBinding scheduleAll = new SeedQueueMultiKeyBinding("seedqueue.key.scheduleAll");
-    public static final SeedQueueMultiKeyBinding startBenchmark = new SeedQueueMultiKeyBinding("seedqueue.key.startBenchmark");
-    public static final SeedQueueMultiKeyBinding cancelBenchmark = new SeedQueueMultiKeyBinding("seedqueue.key.cancelBenchmark");
+    public static final SeedQueueMultiKeyBinding benchmark = new SeedQueueMultiKeyBinding("seedqueue.key.startBenchmark");
+    public static final SeedQueueMultiKeyBinding quitWall = new SeedQueueMultiKeyBinding("seedqueue.key.quitWall", GLFW.GLFW_KEY_ESCAPE);
 }

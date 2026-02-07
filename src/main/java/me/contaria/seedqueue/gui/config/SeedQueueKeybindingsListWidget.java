@@ -24,15 +24,8 @@ public class SeedQueueKeybindingsListWidget extends ElementListWidget<SeedQueueK
         super(client, parent.width, parent.height, 25, parent.height - 32, 25);
         this.parent = parent;
 
-        Map<String, List<PrimaryKeyEntry>> categoryToKeyEntryMap = new LinkedHashMap<>();
         for (SeedQueueMultiKeyBinding keyBinding : parent.keyBindings) {
-            categoryToKeyEntryMap.computeIfAbsent(keyBinding.getCategory(), category -> new ArrayList<>()).add(new PrimaryKeyEntry(keyBinding));
-        }
-        for (Map.Entry<String, List<PrimaryKeyEntry>> category : categoryToKeyEntryMap.entrySet()) {
-            this.addEntry(new CategoryEntry(TextUtil.translatable(category.getKey())));
-            for (PrimaryKeyEntry entry : category.getValue()) {
-                this.addEntry(entry);
-            }
+            this.addEntry(new PrimaryKeyEntry(keyBinding));
         }
     }
 
@@ -66,31 +59,6 @@ public class SeedQueueKeybindingsListWidget extends ElementListWidget<SeedQueueK
     }
 
     public abstract static class Entry extends ElementListWidget.Entry<Entry> {
-    }
-
-    public class CategoryEntry extends Entry {
-        private final Text text;
-        private final int textWidth;
-
-        public CategoryEntry(Text text) {
-            this.text = text;
-            this.textWidth = SeedQueueKeybindingsListWidget.this.client.textRenderer.getWidth(this.text);
-        }
-
-        @Override
-        public void render(MatrixStack matrices, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
-            SeedQueueKeybindingsListWidget.this.client.textRenderer.draw(matrices, this.text, (SeedQueueKeybindingsListWidget.this.parent.width - this.textWidth) / 2.0f, (float) (y + entryHeight - SeedQueueKeybindingsListWidget.this.client.textRenderer.fontHeight - 1), 0xFFFFFF);
-        }
-
-        @Override
-        public boolean changeFocus(boolean lookForwards) {
-            return false;
-        }
-
-        @Override
-        public List<? extends Element> children() {
-            return Collections.emptyList();
-        }
     }
 
     public abstract class KeyEntry extends Entry {

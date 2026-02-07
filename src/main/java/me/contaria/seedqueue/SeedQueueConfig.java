@@ -51,11 +51,11 @@ public class SeedQueueConfig implements SpeedrunConfig {
 
     @Config.Category("queue")
     @Config.Numbers.Whole.Bounds(min = 0, max = 30)
-    public int maxConcurrently = 1;
+    public int maxConcurrently = 0;
 
     @Config.Category("queue")
     @Config.Numbers.Whole.Bounds(min = 1, max = 30)
-    public int maxConcurrently_onWall = 1;
+    public int maxConcurrently_onWall = 4;
 
     @Config.Category("queue")
     @Config.Numbers.Whole.Bounds(max = 100)
@@ -65,7 +65,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
     public boolean resumeOnFilledQueue = false;
 
     @Config.Category("wall")
-    public boolean useWall = false;
+    public boolean useWall = true;
 
     @Config.Category("wall")
     @Config.Numbers.Whole.Bounds(min = 1, max = 10)
@@ -117,6 +117,11 @@ public class SeedQueueConfig implements SpeedrunConfig {
     public boolean reduceLevelList = true;
 
     @Config.Category("misc")
+    @Config.Numbers.Whole.Bounds(min = 1, max = Integer.MAX_VALUE)
+    @Config.Numbers.TextField
+    public int benchmarkResets = 1000;
+
+    @Config.Category("misc")
     @Config.Numbers.Whole.Bounds(min = -1, max = 500, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
     public long chunkMapFreezing = -1;
 
@@ -162,11 +167,6 @@ public class SeedQueueConfig implements SpeedrunConfig {
     public boolean showDebugMenu = false;
 
     @Config.Category("debug")
-    @Config.Numbers.Whole.Bounds(min = 1, max = Integer.MAX_VALUE)
-    @Config.Numbers.TextField
-    public int benchmarkResets = 1000;
-
-    @Config.Category("debug")
     public boolean useWatchdog = false;
 
     @Config.Category("debug")
@@ -184,8 +184,8 @@ public class SeedQueueConfig implements SpeedrunConfig {
             SeedQueueKeyBindings.playNextLock,
             SeedQueueKeyBindings.scheduleJoin,
             SeedQueueKeyBindings.scheduleAll,
-            SeedQueueKeyBindings.startBenchmark,
-            SeedQueueKeyBindings.cancelBenchmark
+            SeedQueueKeyBindings.benchmark,
+            SeedQueueKeyBindings.quitWall
     };
 
     {

@@ -13,35 +13,25 @@ import java.util.List;
 
 public class SeedQueueMultiKeyBinding {
     private final String translationKey;
-    private final String category;
 
     private InputUtil.Key primaryKey;
     private final List<InputUtil.Key> secondaryKeys;
     private final List<InputUtil.Key> blockingKeys;
 
     public SeedQueueMultiKeyBinding(String translationKey) {
-        this(translationKey, "seedqueue.key.categories.builtin");
-    }
-
-    public SeedQueueMultiKeyBinding(String translationKey, String category) {
-        this(translationKey, category, InputUtil.UNKNOWN_KEY);
+        this(translationKey, InputUtil.UNKNOWN_KEY);
     }
 
     public SeedQueueMultiKeyBinding(String translationKey, int code) {
-        this(translationKey, "seedqueue.key.categories.builtin", code);
+        this(translationKey, InputUtil.Type.KEYSYM, code);
     }
 
-    public SeedQueueMultiKeyBinding(String translationKey, String category, int code) {
-        this(translationKey, category, InputUtil.Type.KEYSYM, code);
+    public SeedQueueMultiKeyBinding(String translationKey, InputUtil.Type type, int code) {
+        this(translationKey, type.createFromCode(code));
     }
 
-    public SeedQueueMultiKeyBinding(String translationKey, String category, InputUtil.Type type, int code) {
-        this(translationKey, category, type.createFromCode(code));
-    }
-
-    protected SeedQueueMultiKeyBinding(String translationKey, String category, InputUtil.Key primaryKey) {
+    protected SeedQueueMultiKeyBinding(String translationKey, InputUtil.Key primaryKey) {
         this.translationKey = translationKey;
-        this.category = category;
         this.primaryKey = primaryKey;
         this.secondaryKeys = new ArrayList<>();
         this.blockingKeys = new ArrayList<>();
@@ -79,10 +69,6 @@ public class SeedQueueMultiKeyBinding {
 
     public String getTranslationKey() {
         return this.translationKey;
-    }
-
-    public String getCategory() {
-        return this.category;
     }
 
     public InputUtil.Key getPrimaryKey() {
