@@ -84,6 +84,8 @@
   "speedrunapi.config.seedqueue.option.resetCooldown.value": "%sms",
   "speedrunapi.config.seedqueue.option.resetCooldown.value.1000": "1 second",
   "speedrunapi.config.seedqueue.option.resetCooldown.description": "Cooldown before a preview can be reset, starts when the preview is first rendered.",
+  "speedrunapi.config.seedqueue.option.showPauseMenu": "Show Pause Menu",
+  "speedrunapi.config.seedqueue.option.showPauseMenu.description": "If enabled, the Game Menu Screen will be rendered on top of previews. Needs to be ON for a run to count as No F3.",
   "speedrunapi.config.seedqueue.option.waitForPreviewSetup": "Wait for Preview Setup",
   "speedrunapi.config.seedqueue.option.waitForPreviewSetup.description": "If enabled, seeds will only start being shown on the Wall Screen once they are ready to render their preview.\nYou can disable this option if you want to see chunkmaps while the preview is still being set up.",
   "speedrunapi.config.seedqueue.option.bypassWall": "Bypass Wall Screen",

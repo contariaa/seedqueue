@@ -83,6 +83,9 @@ public class SeedQueueConfig implements SpeedrunConfig {
     public int resetCooldown = 150;
 
     @Config.Category("wall")
+    public boolean showPauseMenu = false;
+
+    @Config.Category("wall")
     public boolean waitForPreviewSetup = true;
 
     @Config.Category("wall")

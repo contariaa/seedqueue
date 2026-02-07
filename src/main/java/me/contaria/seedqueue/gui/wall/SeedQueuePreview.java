@@ -68,7 +68,7 @@ public class SeedQueuePreview extends DrawableHelper {
         this.height = (int) Math.ceil((double) SeedQueue.config.simulatedWindowSize.height() / scale);
 
         this.buttons = WorldPreviewProperties.createMenu(this.width, this.height, () -> {}, () -> {});
-        this.showMenu = !Boolean.TRUE.equals(SpeedrunConfigAPI.getConfigValue("standardsettings", "autoF3Esc"));
+        this.showMenu = SeedQueue.config.showPauseMenu;
 
         if (Atum.inDemoMode()) {
             this.seedString = "North Carolina";
