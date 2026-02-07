@@ -6,21 +6,30 @@ import me.contaria.seedqueue.SeedQueue;
 import org.lwjgl.opengl.GL11;
 
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SeedQueueSystemInfo {
     public static void logSystemInformation() {
-        if (Boolean.parseBoolean(System.getProperty("seedqueue.logSystemInfo", "true"))) {
-            SeedQueue.LOGGER.info("System Information (Logged by SeedQueue):");
-            SeedQueue.LOGGER.info("Operating System: {}", System.getProperty("os.name"));
-            SeedQueue.LOGGER.info("OS Version: {}", System.getProperty("os.version"));
-            SeedQueue.LOGGER.info("CPU: {}", getCpuInfo());
-            SeedQueue.LOGGER.info("GPU: {}", getGpuInfo());
-            SeedQueue.LOGGER.info("Java Version: {}", System.getProperty("java.version"));
-            SeedQueue.LOGGER.info("JVM Arguments: {}", getJavaArguments());
-            SeedQueue.LOGGER.info("Total Physical Memory (MB): {}", getTotalPhysicalMemory());
-            SeedQueue.LOGGER.info("Max Memory (MB): {}", getMaxAllocatedMemory());
-            SeedQueue.LOGGER.info("Total Processors: {}", getTotalPhysicalProcessors());
-            SeedQueue.LOGGER.info("Available Processors: {}", getAvailableProcessors());
+        if (!Boolean.parseBoolean(System.getProperty("seedqueue.logSystemInfo", "true"))) {
+            return;
+        }
+        try {
+            List<String> lines = new ArrayList<>();
+            lines.add("System Information (Logged by SeedQueue):");
+            lines.add(String.format("Operating System: %s", System.getProperty("os.name")));
+            lines.add(String.format("OS Version: %s", System.getProperty("os.version")));
+            lines.add(String.format("CPU: %s", getCpuInfo()));
+            lines.add(String.format("GPU: %s", getGpuInfo()));
+            lines.add(String.format("Java Version: %s", System.getProperty("java.version")));
+            lines.add(String.format("JVM Arguments: %s", getJavaArguments()));
+            lines.add(String.format("Total Physical Memory (MB): %s", getTotalPhysicalMemory()));
+            lines.add(String.format("Max Memory (MB): %s", getMaxAllocatedMemory()));
+            lines.add(String.format("Total Processors: %s", getTotalPhysicalProcessors()));
+            lines.add(String.format("Available Processors: %s", getAvailableProcessors()));
+            lines.forEach(SeedQueue.LOGGER::info);
+        } catch (Exception e) {
+            SeedQueue.LOGGER.error("SeedQueue failed to log System Information!", e);
         }
     }
 
