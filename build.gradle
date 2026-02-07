@@ -22,7 +22,7 @@ dependencies {
 
 	// SpeedrunAPI
 	// check for the latest versions at https://jitpack.io/#contariaa/speedrunapi
-	modImplementation "com.github.contariaa:SpeedrunAPI:96811e85e8"
+	modImplementation "com.github.contariaa:SpeedrunAPI:a8a9a803bd"
 	annotationProcessor "com.github.bawnorton.mixinsquared:mixinsquared-fabric:0.1.1"
 
 	// check for the latest versions at https://jitpack.io/#contariaa/atum

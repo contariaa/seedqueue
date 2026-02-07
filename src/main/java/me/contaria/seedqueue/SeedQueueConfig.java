@@ -20,6 +20,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ScreenTexts;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.StringRenderable;
+import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -27,6 +28,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Config class based on SpeedrunAPI, initialized on prelaunch.
@@ -354,7 +356,17 @@ public class SeedQueueConfig implements SpeedrunConfig {
 
     @Override
     public boolean isAvailable() {
+        if (ModCompat.HAS_MCSRRANKED) {
+            return false;
+        }
         return !SeedQueue.isActive();
+    }
+
+    public Optional<Text> getUnavailableReason() {
+        if (ModCompat.HAS_MCSRRANKED) {
+            return Optional.of(TextUtil.translatable("seedqueue.menu.config.unavailable.mcsrranked"));
+        }
+        return Optional.empty();
     }
 
     @Override

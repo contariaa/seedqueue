@@ -10,6 +10,7 @@ import net.minecraft.server.MinecraftServer;
  */
 public class ModCompat {
     public static final boolean HAS_FASTRESET = FabricLoader.getInstance().isModLoaded("fast_reset");
+    public static final boolean HAS_MCSRRANKED = FabricLoader.getInstance().isModLoaded("mcsrranked");
     public static final boolean HAS_SODIUM = FabricLoader.getInstance().isModLoaded("sodium");
     public static final boolean HAS_STANDARDSETTINGS = FabricLoader.getInstance().isModLoaded("standardsettings");
     public static final boolean HAS_WORLDPREVIEW = FabricLoader.getInstance().isModLoaded("worldpreview");
