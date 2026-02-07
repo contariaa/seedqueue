@@ -1,16 +1,13 @@
 package me.contaria.seedqueue;
 
-import com.bawnorton.mixinsquared.api.MixinCanceller;
 import me.contaria.speedrunapi.mixin_plugin.SpeedrunMixinConfigPlugin;
 import net.fabricmc.loader.api.FabricLoader;
-
-import java.util.List;
 
 /**
  * SeedQueues Mixin Config Plugin, extends SpeedrunAPI's plugin to inherit its functionality.
  * Only used for compatibility with Sodium Mac, will be redundant once Sodium is updated to not need the seperate mac version anymore.
  */
-public class SeedQueueMixinConfigPlugin extends SpeedrunMixinConfigPlugin implements MixinCanceller {
+public class SeedQueueMixinConfigPlugin extends SpeedrunMixinConfigPlugin {
     private static final boolean MAC_SODIUM = FabricLoader.getInstance().isModLoaded("sodiummac");
 
     @Override
@@ -26,12 +23,5 @@ public class SeedQueueMixinConfigPlugin extends SpeedrunMixinConfigPlugin implem
             }
         }
         return super.shouldApplyMixin(targetClassName, mixinClassName);
-    }
-
-    @Override
-    public boolean shouldCancel(List<String> targetClassNames, String mixinClassName) {
-        // SleepBackgrounds Thread Executor mixin has been observed to hurt performance when SeedQueue is active
-        // since SeedQueue spawns many more executors
-        return mixinClassName.equals("com.redlimerl.sleepbackground.mixin.MixinThreadExecutor");
     }
 }
