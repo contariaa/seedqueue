@@ -1,6 +1,7 @@
 package me.contaria.seedqueue.mixin.client.sounds;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import me.contaria.seedqueue.SeedQueue;
 import me.contaria.seedqueue.interfaces.SQSoundSystem;
 import net.minecraft.client.sound.AudioStream;
 import net.minecraft.client.sound.Channel;
@@ -41,6 +42,20 @@ public abstract class SoundSystemMixin implements SQSoundSystem {
             throw new RuntimeException("Tried to play a broken sound file from a SeedQueue customization pack (\"" + soundInstance.getId() + "\")! If you are using empty sound files to mute sounds on the wall screen, use short silent ones instead.");
         }
         return audio;
+    }
+
+    @ModifyExpressionValue(
+            method = "getAdjustedVolume",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/sound/SoundSystem;getSoundVolume(Lnet/minecraft/sound/SoundCategory;)F"
+            )
+    )
+    private float useSeedQueueVolume(float volume, SoundInstance soundInstance) {
+        if (soundInstance.getId().getNamespace().equals("seedqueue")) {
+            return SeedQueue.config.soundVolume / 100.0f;
+        }
+        return volume;
     }
 
     // see SoundSystem#closeSounds

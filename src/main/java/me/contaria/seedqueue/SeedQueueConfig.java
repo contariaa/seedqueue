@@ -94,6 +94,10 @@ public class SeedQueueConfig implements SpeedrunConfig {
     @Config.Category("wall")
     public boolean smartSwitch = false;
 
+    @Config.Category("wall")
+    @Config.Numbers.Whole.Bounds(max = 100)
+    public int soundVolume = 100;
+
     @Config.Category("performance")
     @Config.Numbers.Whole.Bounds(min = 1, max = 255)
     public int wallFPS = 60;
