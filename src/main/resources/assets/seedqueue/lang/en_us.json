@@ -17,6 +17,7 @@
   "seedqueue.menu.benchmark.result": "%s resets in %ss (%s RPS)",
 
   "seedqueue.menu.config.unavailable.mcsrranked": "SeedQueue is not compatible with MCSR Ranked, please create a seperate instance or disable Ranked.",
+  "seedqueue.menu.config.unavailable.resetting": "SeedQueue config is not available while resetting.\nYou can quit resetting by going to Options > Stop Resets & Quit or pressing your Quit Wall hotkey on the Wall Screen (default: Esc).",
 
   "seedqueue.menu.config.useWall.notAvailable": "§c§oNot Available",
   "seedqueue.menu.config.useWall.notAvailable.tooltip": "Using the Wall Screen requires the following mods to be installed:",

@@ -362,11 +362,12 @@ public class SeedQueueConfig implements SpeedrunConfig {
         return !SeedQueue.isActive();
     }
 
+    @Override
     public Optional<Text> getUnavailableReason() {
         if (ModCompat.HAS_MCSRRANKED) {
             return Optional.of(TextUtil.translatable("seedqueue.menu.config.unavailable.mcsrranked"));
         }
-        return Optional.empty();
+        return Optional.of(TextUtil.translatable("seedqueue.menu.config.unavailable.resetting"));
     }
 
     @Override
