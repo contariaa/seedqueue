@@ -69,6 +69,7 @@ public class SeedQueueEntry {
         this.userCache = userCache;
 
         ((SQMinecraftServer) server).seedQueue$setEntry(this);
+        ModCompat.hermes$writeToWorldLog(getServer(), "seedqueue_create", System.currentTimeMillis());
     }
 
     public MinecraftServer getServer() {
@@ -318,6 +319,7 @@ public class SeedQueueEntry {
     public boolean lock() {
         if (!this.locked) {
             this.locked = true;
+            ModCompat.hermes$writeToWorldLog(this.server, "seedqueue_lock", System.currentTimeMillis());
             SeedQueue.ping();
             return true;
         }
@@ -369,6 +371,7 @@ public class SeedQueueEntry {
             }
 
             SeedQueue.LOGGER.info("Discarding \"{}\"...", this.session.getDirectoryName());
+            ModCompat.hermes$writeToWorldLog(this.server, "seedqueue_discard", System.currentTimeMillis());
 
             this.discarded = true;
 
