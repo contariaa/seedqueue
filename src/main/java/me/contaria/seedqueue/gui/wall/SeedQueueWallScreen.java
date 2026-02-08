@@ -73,6 +73,9 @@ public class SeedQueueWallScreen extends Screen {
     private final Set<SeedQueueEntry> scheduledEntries = new HashSet<>();
     private boolean playedScheduledEnterWarning;
 
+    @Nullable
+    private SeedQueuePreview lastLockedPreview;
+
     private List<LockTexture> lockTextures;
     private int lockTexturesWeightSum;
     @Nullable
@@ -546,6 +549,9 @@ public class SeedQueueWallScreen extends Screen {
         if (SeedQueueKeyBindings.playNextLock.matchesMouse(button)) {
             this.playNextLock();
         }
+        if (SeedQueueKeyBindings.resetLastLock.matchesMouse(button)) {
+            this.resetInstance(this.lastLockedPreview, true, true, true);
+        }
         if (SeedQueueKeyBindings.scheduleAll.matchesMouse(button)) {
             this.scheduleAll();
         }
@@ -614,6 +620,9 @@ public class SeedQueueWallScreen extends Screen {
         }
         if (SeedQueueKeyBindings.playNextLock.matchesKey(keyCode, scanCode)) {
             this.playNextLock();
+        }
+        if (SeedQueueKeyBindings.resetLastLock.matchesKey(keyCode, scanCode)) {
+            this.resetInstance(this.lastLockedPreview, true, true, true);
         }
         if (SeedQueueKeyBindings.scheduleAll.matchesKey(keyCode, scanCode)) {
             this.scheduleAll();
@@ -739,6 +748,7 @@ public class SeedQueueWallScreen extends Screen {
                     this.addLockedPreview(instance);
                 }
             }
+            this.lastLockedPreview = instance;
             if (SeedQueue.config.freezeLockedPreviews) {
                 // clearing SeedQueuePreviewProperties frees the previews WorldRenderer, allowing resources to be cleared
                 // it also means the amount of WorldRenderers does not exceed Rows * Columns + Background Previews
@@ -758,6 +768,9 @@ public class SeedQueueWallScreen extends Screen {
         SeedQueue.discard(instance.getSeedQueueEntry());
 
         this.scheduledEntries.remove(instance.getSeedQueueEntry());
+        if (this.lastLockedPreview == instance) {
+            this.lastLockedPreview = null;
+        }
 
         if (playSound) {
             this.playSound(SeedQueueSounds.RESET_INSTANCE);
@@ -926,6 +939,8 @@ public class SeedQueueWallScreen extends Screen {
             for (SeedQueuePreview instance : this.getInstances()) {
                 this.removePreview(instance);
             }
+            this.scheduledEntries.clear();
+            this.lastLockedPreview = null;
         }
     }
 

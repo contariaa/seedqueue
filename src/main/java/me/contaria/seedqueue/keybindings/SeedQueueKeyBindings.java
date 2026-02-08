@@ -11,6 +11,7 @@ public class SeedQueueKeyBindings {
     public static final SeedQueueMultiKeyBinding resetColumn = new SeedQueueMultiKeyBinding("seedqueue.key.resetColumn");
     public static final SeedQueueMultiKeyBinding resetRow = new SeedQueueMultiKeyBinding("seedqueue.key.resetRow");
     public static final SeedQueueMultiKeyBinding playNextLock = new SeedQueueMultiKeyBinding("seedqueue.key.playNextLock");
+    public static final SeedQueueMultiKeyBinding resetLastLock = new SeedQueueMultiKeyBinding("seedqueue.key.resetLastLock");
     public static final SeedQueueMultiKeyBinding scheduleJoin = new SeedQueueMultiKeyBinding("seedqueue.key.scheduleJoin");
     public static final SeedQueueMultiKeyBinding scheduleAll = new SeedQueueMultiKeyBinding("seedqueue.key.scheduleAll");
     public static final SeedQueueMultiKeyBinding benchmark = new SeedQueueMultiKeyBinding("seedqueue.key.startBenchmark");
