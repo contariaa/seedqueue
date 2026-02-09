@@ -519,7 +519,7 @@ public class SeedQueueWallScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (this.isBenchmarking()) {
-            if (SeedQueueKeyBindings.benchmark.matchesMouse(button)) {
+            if (SeedQueueKeyBindings.cancelBenchmark.matchesMouse(button)) {
                 this.stopBenchmark();
             }
             return true;
@@ -532,7 +532,7 @@ public class SeedQueueWallScreen extends Screen {
             return true;
         }
 
-        if (SeedQueueKeyBindings.benchmark.matchesMouse(button)) {
+        if (SeedQueueKeyBindings.startBenchmark.matchesMouse(button)) {
             this.startBenchmark();
             return true;
         }
@@ -586,7 +586,7 @@ public class SeedQueueWallScreen extends Screen {
         double mouseY = this.client.mouse.getY() * window.getScaledWidth() / window.getWidth();
 
         if (this.isBenchmarking()) {
-            if (SeedQueueKeyBindings.benchmark.matchesKey(keyCode, scanCode)) {
+            if (SeedQueueKeyBindings.cancelBenchmark.matchesKey(keyCode, scanCode)) {
                 this.stopBenchmark();
             }
             return true;
@@ -599,7 +599,7 @@ public class SeedQueueWallScreen extends Screen {
             return true;
         }
 
-        if (SeedQueueKeyBindings.benchmark.matchesKey(keyCode, scanCode)) {
+        if (SeedQueueKeyBindings.startBenchmark.matchesKey(keyCode, scanCode)) {
             this.startBenchmark();
             return true;
         }

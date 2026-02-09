@@ -190,7 +190,8 @@ public class SeedQueueConfig implements SpeedrunConfig {
             SeedQueueKeyBindings.resetLastLock,
             SeedQueueKeyBindings.scheduleJoin,
             SeedQueueKeyBindings.scheduleAll,
-            SeedQueueKeyBindings.benchmark,
+            SeedQueueKeyBindings.startBenchmark,
+            SeedQueueKeyBindings.cancelBenchmark,
             SeedQueueKeyBindings.quitWall
     };
 

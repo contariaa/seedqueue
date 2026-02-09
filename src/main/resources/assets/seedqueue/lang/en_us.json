@@ -51,7 +51,8 @@
   "seedqueue.key.resetLastLock": "Reset Last Lock",
   "seedqueue.key.scheduleJoin": "Schedule Instance",
   "seedqueue.key.scheduleAll": "Schedule All",
-  "seedqueue.key.startBenchmark": "Start/Stop Benchmark",
+  "seedqueue.key.startBenchmark": "Start Benchmark",
+  "seedqueue.key.cancelBenchmark": "Stop Benchmark",
   "seedqueue.key.quitWall": "Quit Wall Screen",
 
   "speedrunapi.config.seedqueue.category.queue": "Queue Settings",
