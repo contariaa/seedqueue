@@ -14,11 +14,14 @@ import me.contaria.speedrunapi.config.api.SpeedrunConfig;
 import me.contaria.speedrunapi.config.api.SpeedrunOption;
 import me.contaria.speedrunapi.config.api.annotations.Config;
 import me.contaria.speedrunapi.util.TextUtil;
+import me.voidxwalker.autoreset.Atum;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ConfirmScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ScreenTexts;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.util.InputUtil;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.StringRenderable;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
@@ -368,7 +371,22 @@ public class SeedQueueConfig implements SpeedrunConfig {
         if (ModCompat.HAS_MCSRRANKED) {
             return Optional.of(TextUtil.translatable("seedqueue.menu.config.unavailable.mcsrranked"));
         }
-        return Optional.of(TextUtil.translatable("seedqueue.menu.config.unavailable.resetting"));
+        return Optional.of(TextUtil.translatable("seedqueue.menu.config.unavailable.resetting", this.getQuitAtumText(), this.getQuitWallText()));
+    }
+
+    private Text getQuitAtumText() {
+        if (Atum.config.hotkeyOnly) {
+            return TextUtil.translatable("menu.returnToMenu");
+        }
+        return TextUtil.translatable("options.title").append(" > ").append(TextUtil.translatable("atum.menu.stop_resets"));
+    }
+
+    private Text getQuitWallText() {
+        MutableText text = TextUtil.literal("");
+        for (InputUtil.Key key : SeedQueueKeyBindings.quitWall.getSecondaryKeys()) {
+            text = text.append(key.getLocalizedText()).append(" + ");
+        }
+        return text.append(SeedQueueKeyBindings.quitWall.getPrimaryKey().getLocalizedText());
     }
 
     @Override

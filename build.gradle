@@ -26,7 +26,7 @@ dependencies {
 	annotationProcessor "com.github.bawnorton.mixinsquared:mixinsquared-fabric:0.1.1"
 
 	// check for the latest versions at https://jitpack.io/#contariaa/atum
-	modImplementation ("com.github.contariaa:atum:fe1f979836") {
+	modImplementation ("com.github.contariaa:atum:v2.7.1-1.16-1.16.1") {
 		transitive = false
 	}
 
