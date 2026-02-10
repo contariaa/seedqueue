@@ -4,6 +4,7 @@ import me.contaria.seedqueue.keybindings.SeedQueueMultiKeyBinding;
 import me.contaria.speedrunapi.util.TextUtil;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gui.Drawable;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.widget.AbstractPressableButtonWidget;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -77,9 +78,9 @@ public class SeedQueueKeybindingsListWidget extends ElementListWidget<SeedQueueK
 
         protected abstract void pressKey(InputUtil.Key key);
 
-        protected abstract void selectButton(SeedQueueKeyButtonWidget button);
+        protected abstract void selectWidget(SeedQueueKeyEntryWidget button);
 
-        protected abstract boolean isSelected(SeedQueueKeyButtonWidget button);
+        protected abstract boolean isSelected(SeedQueueKeyEntryWidget button);
 
         @Override
         public void render(MatrixStack matrices, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
@@ -90,29 +91,29 @@ public class SeedQueueKeybindingsListWidget extends ElementListWidget<SeedQueueK
 
             x += 110;
             for (Element e : this.children()) {
-                AbstractPressableButtonWidget button = (AbstractPressableButtonWidget) e;
-                button.x = x;
-                button.y = y;
-                if (button instanceof SeedQueueKeyButtonWidget && this.isSelected((SeedQueueKeyButtonWidget) button)) {
-                    Text message = button.getMessage();
-                    button.setMessage(TextUtil.literal("> ").append(message.shallowCopy()).append(" <").formatted(Formatting.YELLOW));
-                    button.render(matrices, mouseX, mouseY, tickDelta);
-                    button.setMessage(message);
+                Drawable drawable = (Drawable) e;
+                if (drawable instanceof SeedQueueKeyEntryWidget) {
+                    ((SeedQueueKeyEntryWidget) drawable).update(x, y, mouseX, mouseY);
                 } else {
-                    button.render(matrices, mouseX, mouseY, tickDelta);
+                    AbstractPressableButtonWidget button = (AbstractPressableButtonWidget) drawable;
+                    button.x = x;
+                    button.y = y;
                 }
-                x += button.getWidth();
+                drawable.render(matrices, mouseX, mouseY, tickDelta);
+                x += 75;
             }
 
             if (this.tooltip != null && mouseX > titleX && mouseX < titleX + textRenderer.getWidth(this.title) && mouseY > titleY && mouseY < titleY + textRenderer.fontHeight) {
                 SeedQueueKeybindingsListWidget.this.parent.renderTooltip(matrices, textRenderer.wrapLines(this.tooltip, 200), mouseX, mouseY);
             }
         }
+
+        public abstract void clearKey(SeedQueueKeyEntryWidget entry);
     }
 
     public class PrimaryKeyEntry extends KeyEntry {
         private final SeedQueueMultiKeyBinding binding;
-        private final SeedQueueKeyButtonWidget primaryKeyButton;
+        private final SeedQueueKeyEntryWidget primaryKeyWidget;
 
         private List<Text> secondaryKeys;
         private List<Text> blockingKeys;
@@ -120,7 +121,7 @@ public class SeedQueueKeybindingsListWidget extends ElementListWidget<SeedQueueK
         private PrimaryKeyEntry(SeedQueueMultiKeyBinding keyBinding) {
             super(TextUtil.translatable(keyBinding.getTranslationKey()));
             this.binding = keyBinding;
-            this.primaryKeyButton = new SeedQueueKeyButtonWidget(this, keyBinding.getPrimaryKey().getLocalizedText());
+            this.primaryKeyWidget = new SeedQueueKeyEntryWidget(this, keyBinding.getPrimaryKey().getLocalizedText());
             this.updateAdditionalKeysText();
         }
 
@@ -155,17 +156,23 @@ public class SeedQueueKeybindingsListWidget extends ElementListWidget<SeedQueueK
         @Override
         protected void pressKey(InputUtil.Key key) {
             this.binding.setPrimaryKey(key);
-            this.primaryKeyButton.setMessage(key.getLocalizedText());
+            this.primaryKeyWidget.updateMessage(key.getLocalizedText());
         }
 
         @Override
-        protected void selectButton(SeedQueueKeyButtonWidget button) {
+        public void clearKey(SeedQueueKeyEntryWidget entry) {
+            this.binding.setPrimaryKey(InputUtil.UNKNOWN_KEY);
+            this.primaryKeyWidget.updateMessage(SeedQueueKeyButtonWidget.UNKNOWN_KEY);
+        }
+
+        @Override
+        protected void selectWidget(SeedQueueKeyEntryWidget widget) {
             SeedQueueKeybindingsListWidget.this.parent.focusedBinding = this;
         }
 
         @Override
-        protected boolean isSelected(SeedQueueKeyButtonWidget button) {
-            return SeedQueueKeybindingsListWidget.this.parent.focusedBinding == this && this.primaryKeyButton == button;
+        protected boolean isSelected(SeedQueueKeyEntryWidget widget) {
+            return SeedQueueKeybindingsListWidget.this.parent.focusedBinding == this && this.primaryKeyWidget == widget;
         }
 
         @Override
@@ -194,13 +201,13 @@ public class SeedQueueKeybindingsListWidget extends ElementListWidget<SeedQueueK
 
         @Override
         public List<? extends Element> children() {
-            return Collections.singletonList(this.primaryKeyButton);
+            return Collections.singletonList(this.primaryKeyWidget);
         }
     }
 
     public abstract class AdditionalKeysEntry extends KeyEntry {
         protected final PrimaryKeyEntry key;
-        private final List<SeedQueueKeyButtonWidget> keyButtons;
+        private final List<SeedQueueKeyEntryWidget> widgets;
         private final ButtonWidget addKeyButton;
 
         private int selectedIndex;
@@ -208,16 +215,16 @@ public class SeedQueueKeybindingsListWidget extends ElementListWidget<SeedQueueK
         public AdditionalKeysEntry(PrimaryKeyEntry key, Text title, Text tooltip) {
             super(title, tooltip);
             this.key = key;
-            this.keyButtons = new ArrayList<>();
+            this.widgets = new ArrayList<>();
             for (InputUtil.Key k : this.getKeys()) {
-                this.keyButtons.add(new SeedQueueKeyButtonWidget(this, k.getLocalizedText()));
+                this.widgets.add(new SeedQueueKeyEntryWidget(this, k.getLocalizedText()));
             }
             this.addKeyButton = new ButtonWidget(0, 0, 20, 20, TextUtil.literal("+"), button -> {
                 this.addKey();
-                SeedQueueKeyButtonWidget keyButton = new SeedQueueKeyButtonWidget(this);
-                this.keyButtons.add(keyButton);
-                this.setFocused(keyButton);
-                this.selectButton(keyButton);
+                SeedQueueKeyEntryWidget widget = new SeedQueueKeyEntryWidget(this);
+                this.widgets.add(widget);
+                this.setFocused(widget);
+                this.selectWidget(widget);
             });
         }
 
@@ -234,29 +241,36 @@ public class SeedQueueKeybindingsListWidget extends ElementListWidget<SeedQueueK
             if (this.selectedIndex != -1) {
                 if (key.equals(InputUtil.UNKNOWN_KEY)) {
                     this.removeKey(this.selectedIndex);
-                    this.keyButtons.remove(this.selectedIndex);
+                    this.widgets.remove(this.selectedIndex);
                 } else {
                     this.setKey(this.selectedIndex, key);
-                    this.keyButtons.get(this.selectedIndex).setMessage(key.getLocalizedText());
+                    this.widgets.get(this.selectedIndex).updateMessage(key.getLocalizedText());
                 }
                 this.selectedIndex = -1;
             }
         }
 
         @Override
-        protected void selectButton(SeedQueueKeyButtonWidget button) {
-            this.selectedIndex = this.keyButtons.indexOf(button);
+        public void clearKey(SeedQueueKeyEntryWidget entry) {
+            int index = this.widgets.indexOf(entry);
+            this.removeKey(index);
+            this.widgets.remove(index);
+        }
+
+        @Override
+        protected void selectWidget(SeedQueueKeyEntryWidget widget) {
+            this.selectedIndex = this.widgets.indexOf(widget);
             SeedQueueKeybindingsListWidget.this.parent.focusedBinding = this;
         }
 
         @Override
-        protected boolean isSelected(SeedQueueKeyButtonWidget button) {
-            return SeedQueueKeybindingsListWidget.this.parent.focusedBinding == this && this.selectedIndex != -1 && this.selectedIndex == this.keyButtons.indexOf(button);
+        protected boolean isSelected(SeedQueueKeyEntryWidget widget) {
+            return SeedQueueKeybindingsListWidget.this.parent.focusedBinding == this && this.selectedIndex != -1 && this.selectedIndex == this.widgets.indexOf(widget);
         }
 
         @Override
         public List<? extends Element> children() {
-            List<Element> children = new ArrayList<>(this.keyButtons);
+            List<Element> children = new ArrayList<>(this.widgets);
             children.add(this.addKeyButton);
             return children;
         }

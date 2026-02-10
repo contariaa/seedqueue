@@ -7,7 +7,6 @@ import net.minecraft.client.gui.screen.ScreenTexts;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.math.MatrixStack;
-import org.lwjgl.glfw.GLFW;
 
 public class SeedQueueKeybindingsScreen extends Screen {
     private final Screen parent;
@@ -41,7 +40,7 @@ public class SeedQueueKeybindingsScreen extends Screen {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (this.focusedBinding != null) {
-            this.focusedBinding.pressKey(keyCode == GLFW.GLFW_KEY_ESCAPE ? InputUtil.UNKNOWN_KEY : InputUtil.fromKeyCode(keyCode, scanCode));
+            this.focusedBinding.pressKey(InputUtil.fromKeyCode(keyCode, scanCode));
             this.focusedBinding = null;
             return true;
         }

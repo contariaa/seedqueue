@@ -7,22 +7,20 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 
 public class SeedQueueKeyButtonWidget extends AbstractPressableButtonWidget {
-    private static final Text UNKNOWN_KEY = InputUtil.UNKNOWN_KEY.getLocalizedText();
+    public static final Text UNKNOWN_KEY = InputUtil.UNKNOWN_KEY.getLocalizedText();
 
     private final SeedQueueKeybindingsListWidget.KeyEntry entry;
+    private final SeedQueueKeyEntryWidget parent;
 
-    public SeedQueueKeyButtonWidget(SeedQueueKeybindingsListWidget.KeyEntry entry) {
-        this(entry, UNKNOWN_KEY);
-    }
-
-    public SeedQueueKeyButtonWidget(SeedQueueKeybindingsListWidget.KeyEntry entry, Text message) {
+    public SeedQueueKeyButtonWidget(SeedQueueKeybindingsListWidget.KeyEntry entry, SeedQueueKeyEntryWidget parent, Text message) {
         super(0, 0, 75, 20, message);
         this.entry = entry;
+        this.parent = parent;
     }
 
     @Override
     public void onPress() {
-        this.entry.selectButton(this);
+        this.entry.selectWidget(this.parent);
     }
 
     @Override
