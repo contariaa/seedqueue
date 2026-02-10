@@ -37,7 +37,7 @@ public abstract class ChunkRenderShaderBackendMixin {
     @Dynamic
     @Group(name = "cacheShaders")
     @WrapOperation(
-            method = "createShaders",
+            method = "createShaders()V",
             at = @At(
                     value = "INVOKE",
                     target = "Lme/jellysquid/mods/sodium/client/render/chunk/shader/ChunkRenderShaderBackend;createShader(Lme/jellysquid/mods/sodium/client/render/chunk/shader/ChunkFogMode;Lme/jellysquid/mods/sodium/client/gl/attribute/GlVertexFormat;)Lme/jellysquid/mods/sodium/client/render/chunk/shader/ChunkProgram;"
