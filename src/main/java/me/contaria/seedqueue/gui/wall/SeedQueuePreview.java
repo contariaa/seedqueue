@@ -233,6 +233,10 @@ public class SeedQueuePreview extends DrawableHelper {
         }
     }
 
+    protected long getCooldownStart() {
+        return this.cooldownStart;
+    }
+
     private boolean isCooldownReady() {
         return Util.getMeasuringTimeMs() - this.cooldownStart >= SeedQueue.config.resetCooldown;
     }

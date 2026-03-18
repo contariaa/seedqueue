@@ -95,6 +95,7 @@ public class SeedQueueWallScreen extends Screen {
     @Nullable
     private Layout.Pos currentPos;
 
+    protected long[] positionCooldowns;
     protected long benchmarkStart;
     protected int benchmarkedSeeds;
     protected int benchmarkGoal;
@@ -114,6 +115,9 @@ public class SeedQueueWallScreen extends Screen {
     protected void init() {
         this.layout = Layout.createLayout();
         this.mainPreviews = new SeedQueuePreview[this.layout.main.size()];
+        if (this.positionCooldowns == null || this.positionCooldowns.length != this.layout.main.size()) {
+            this.positionCooldowns = new long[this.layout.main.size()];
+        }
         this.lockedPreviews = this.layout.locked != null ? new ArrayList<>() : null;
         this.preparingPreviews = new ArrayList<>();
         this.lockTextures = LockTexture.createLockTextures();
@@ -743,6 +747,10 @@ public class SeedQueueWallScreen extends Screen {
                 int index;
                 if (!this.layout.replaceLockedInstances && (index = ArrayUtils.indexOf(this.mainPreviews, instance)) != -1) {
                     this.blockedMainPositions.add(index);
+                    if (this.positionCooldowns == null || this.positionCooldowns.length != this.layout.main.size()) {
+                        this.positionCooldowns = new long[this.layout.main.size()];
+                    }
+                    this.positionCooldowns[index] = instance.getCooldownStart();
                 }
                 if (this.removePreview(instance)) {
                     this.addLockedPreview(instance);
@@ -813,7 +821,24 @@ public class SeedQueueWallScreen extends Screen {
         for (SeedQueuePreview instance : this.mainPreviews) {
             this.resetInstance(instance, false, false, playSound);
         }
-        this.blockedMainPositions.clear();
+        
+        it.unimi.dsi.fastutil.ints.IntIterator iterator = this.blockedMainPositions.iterator();
+        while (iterator.hasNext()) {
+            int i = iterator.nextInt();
+            if (this.isPositionCooldownReady(i)) {
+                iterator.remove();
+                if (this.positionCooldowns != null) {
+                    this.positionCooldowns[i] = 0L;
+                }
+            }
+        }
+    }
+
+    private boolean isPositionCooldownReady(int index) {
+        if (this.positionCooldowns == null || this.positionCooldowns[index] == 0L || this.positionCooldowns[index] == Long.MAX_VALUE) {
+            return true;
+        }
+        return Util.getMeasuringTimeMs() - this.positionCooldowns[index] >= SeedQueue.config.resetCooldown;
     }
 
     private void focusReset(SeedQueuePreview instance) {
