@@ -2,7 +2,7 @@
   "seedqueue.menu.clearing": "Tømme SeedQueue...",
 
   "seedqueue.menu.crash.title": "SeedQueue Krasjet!",
-  "seedqueue.menu.crash.description": "Krasjet med %s, sjekke loggen for mer informasjon.",
+  "seedqueue.menu.crash.description": "Krasjet med %s, sjekk loggen for mer informasjon.",
 
   "seedqueue.menu.layout_exception.title": "Tilpasset Layout Mislyktes!",
   "seedqueue.menu.layout_exception.description": "Myslyktes med %s, sjekke loggen for mer informasjon.",
