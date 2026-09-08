@@ -19,4 +19,8 @@ class StandardSettingsCompat {
     static void loadCache() {
         StandardSettings.loadCache(StandardSettings.lastWorld);
     }
+
+    public static boolean isEnabled() {
+        return StandardSettings.isEnabled();
+    }
 }

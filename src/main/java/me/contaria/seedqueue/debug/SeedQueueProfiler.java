@@ -11,19 +11,19 @@ import net.minecraft.client.MinecraftClient;
 public class SeedQueueProfiler {
     public static void push(String location) {
         if (shouldProfile()) {
-            MinecraftClient.getInstance().getProfiler().push(location);
+            MinecraftClient.getInstance().profiler.push(location);
         }
     }
 
     public static void swap(String location) {
         if (shouldProfile()) {
-            MinecraftClient.getInstance().getProfiler().swap(location);
+            MinecraftClient.getInstance().profiler.swap(location);
         }
     }
 
     public static void pop() {
         if (shouldProfile()) {
-            MinecraftClient.getInstance().getProfiler().pop();
+            MinecraftClient.getInstance().profiler.pop();
         }
     }
 

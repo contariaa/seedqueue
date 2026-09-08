@@ -1,102 +1,78 @@
 plugins {
-	id 'fabric-loom' version '1.7-SNAPSHOT'
-	id 'maven-publish'
+    id "fabric-loom" version "1.11-SNAPSHOT"
+    id "legacy-looming" version "1.10-SNAPSHOT"
+    id "maven-publish"
+    id 'com.gradleup.shadow' version '8.3.5'
 }
 
-version = project.mod_version + "+" + project.target_version
-group = project.maven_group
+version = "$mod_version+$target_version"
+group = maven_group
 
 base {
-	archivesName = project.archives_base_name
+    archivesName = archives_base_name
 }
 
 repositories {
-	maven { url 'https://jitpack.io' }
+    maven { url "https://jitpack.io" }
+}
+
+loom {
+    decompilers {
+        vineflower {
+            options.putAll(["mark-corresponding-synthetics": "1", "indent-string": "    "])
+        }
+    }
+    mixin {
+        useLegacyMixinAp = false
+    }
+    runs.client.programArgs "--userProperties", "{}"
 }
 
 dependencies {
-	// To change the versions see the gradle.properties file
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "dev.tildejustin:yarn:${project.yarn_mappings}:v2"
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings(legacy.yarn(project.minecraft_version, project.yarn_mappings))
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-	// SpeedrunAPI
-	// check for the latest versions at https://jitpack.io/#contariaa/speedrunapi
-	modImplementation "com.github.contariaa:SpeedrunAPI:96811e85e8"
-	annotationProcessor "com.github.bawnorton.mixinsquared:mixinsquared-fabric:0.1.1"
+    // SpeedrunAPI
+    // check for the latest versions at https://jitpack.io/#contariaa/speedrunapi
+    modImplementation "com.github.contariaa:SpeedrunAPI:c6c47b82a0"
+    annotationProcessor "com.github.bawnorton.mixinsquared:mixinsquared-fabric:0.1.1"
 
-	// check for the latest versions at https://jitpack.io/#contariaa/atum
-	modImplementation ("com.github.contariaa:atum:fe1f979836") {
-		transitive = false
-	}
+    // Atum
+    // check for the latest versions at https://jitpack.io/#contariaa/atum
+    modImplementation "com.github.contariaa:atum:e99845ee05"
 
-	// check for the latest versions at https://jitpack.io/#contariaa/worldpreview
-	modCompileOnly ("com.github.contariaa:worldpreview:96e37bc1cd") {
-		transitive = false
-	}
+    // StandardSettings
+    // check for the latest versions at https://jitpack.io/#contariaa/StandardSettings
+    modCompileOnly "com.github.contariaa:StandardSettings:4ffe5106c8"
 
-	// check for the latest versions at https://jitpack.io/#Minecraft-Java-Edition-Speedrunning/sodium
-	modCompileOnly "com.github.Minecraft-Java-Edition-Speedrunning:sodium:0dd4b2d65a"
-
-	// check for the latest versions at https://jitpack.io/#contariaa/fastreset
-	modCompileOnly ("com.github.contariaa:fastreset:3e395069aa") {
-		transitive = false
-	}
-
-	// check for the latest versions at https://jitpack.io/#contariaa/standardsettings
-	modCompileOnly ("com.github.contariaa:standardsettings:2461224798") {
-		transitive = false
-	}
-
-	// check for latest versions at https://jitpack.io/#dev.tildejustin/state-output
-	modCompileOnly "dev.tildejustin.state-output:state-output-common:v1.2.0"
+    // check for latest versions at https://jitpack.io/#dev.tildejustin/state-output
+    modCompileOnly "dev.tildejustin.state-output:state-output-common:v1.2.0"
 }
 
 processResources {
-	inputs.property "version", version
-
-	filesMatching("fabric.mod.json") {
-		expand "version": version
-	}
+    filesMatching "fabric.mod.json", {
+        expand "version": version
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.encoding = "UTF-8"
-
-	def targetVersion = 8
-	if (JavaVersion.current().isJava9Compatible()) {
-		it.options.release = targetVersion
-	}
+    it.options.encoding = "UTF-8"
+    it.options.release.set(8)
 }
 
 java {
-	sourceCompatibility = JavaVersion.VERSION_1_8
-	targetCompatibility = JavaVersion.VERSION_1_8
-	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-	// if it is present.
-	// If you remove this line, sources will not be generated.
-	withSourcesJar()
+    sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
+    withSourcesJar()
 }
 
 jar {
-	from("LICENSE") {
-		rename { "${it}_${project.base.archivesName.get()}"}
-	}
+    from "LICENSE"
 }
 
-// configure the maven publication
 publishing {
-	publications {
-		mavenJava(MavenPublication) {
-			from components.java
-		}
-	}
-
-	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-	repositories {
-		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the block in the top level.
-		// The repositories here will be used for publishing your artifact, not for
-		// retrieving dependencies.
-	}
+    publications.create("mavenJava", MavenPublication) {
+        from components.java
+    }
+    repositories {}
 }

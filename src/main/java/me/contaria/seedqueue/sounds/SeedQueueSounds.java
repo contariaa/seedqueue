@@ -1,59 +1,50 @@
 package me.contaria.seedqueue.sounds;
 
-import me.contaria.speedrunapi.util.IdentifierUtil;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.sound.PositionedSoundInstance;
-import net.minecraft.client.sound.SoundInstance;
 import net.minecraft.client.sound.SoundManager;
-import net.minecraft.sound.SoundEvent;
+import net.minecraft.client.sound.WeightedSoundSet;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.registry.Registry;
 
 public class SeedQueueSounds {
-    public static final SoundEvent PLAY_INSTANCE = register("play_instance");
-    public static final SoundEvent LOCK_INSTANCE = register("lock_instance");
-    public static final SoundEvent RESET_INSTANCE = register("reset_instance");
-    public static final SoundEvent RESET_ALL = register("reset_all");
-    public static final SoundEvent RESET_COLUMN = register("reset_column");
-    public static final SoundEvent RESET_ROW = register("reset_row");
-    public static final SoundEvent SCHEDULE_JOIN = register("schedule_join");
-    public static final SoundEvent SCHEDULE_ALL = register("schedule_all");
-    public static final SoundEvent SCHEDULED_JOIN_WARNING = register("scheduled_join_warning");
-    public static final SoundEvent START_BENCHMARK = register("start_benchmark");
-    public static final SoundEvent FINISH_BENCHMARK = register("finish_benchmark");
-    public static final SoundEvent OPEN_WALL = register("open_wall");
-    public static final SoundEvent BYPASS_WALL = register("bypass_wall");
+    public static final Identifier PLAY_INSTANCE = register("play_instance");
+    public static final Identifier LOCK_INSTANCE = register("lock_instance");
+    public static final Identifier RESET_INSTANCE = register("reset_instance");
+    public static final Identifier RESET_ALL = register("reset_all");
+    public static final Identifier RESET_COLUMN = register("reset_column");
+    public static final Identifier RESET_ROW = register("reset_row");
+    public static final Identifier SCHEDULE_JOIN = register("schedule_join");
+    public static final Identifier SCHEDULE_ALL = register("schedule_all");
+    public static final Identifier SCHEDULED_JOIN_WARNING = register("scheduled_join_warning");
+    public static final Identifier START_BENCHMARK = register("start_benchmark");
+    public static final Identifier FINISH_BENCHMARK = register("finish_benchmark");
+    public static final Identifier OPEN_WALL = register("open_wall");
+    public static final Identifier BYPASS_WALL = register("bypass_wall");
 
     public static void init() {
     }
 
-    private static SoundEvent register(String id) {
-        return register(IdentifierUtil.of("seedqueue", id));
+    private static Identifier register(String id) {
+        return new Identifier("seedqueue", id);
     }
 
-    private static SoundEvent register(Identifier id) {
-        return Registry.register(Registry.SOUND_EVENT, id, new SoundEvent(id));
-    }
-
-    public static boolean play(SoundEvent sound) {
+    public static boolean play(Identifier sound) {
         SoundManager manager = MinecraftClient.getInstance().getSoundManager();
-        SoundInstance soundInstance = PositionedSoundInstance.master(sound, 1.0f);
-        soundInstance.getSoundSet(manager);
-        if (soundInstance.getSound().equals(SoundManager.MISSING_SOUND)) {
+        WeightedSoundSet soundSet = manager.get(sound);
+        if (soundSet == null || soundSet.getSound() == SoundManager.MISSING_SOUND) {
             return false;
         }
-        manager.play(soundInstance);
+        manager.play(PositionedSoundInstance.master(sound, 1.0f));
         return true;
     }
 
-    public static boolean play(SoundEvent sound, int delay) {
+    public static boolean play(Identifier sound, int delay) {
         SoundManager manager = MinecraftClient.getInstance().getSoundManager();
-        SoundInstance soundInstance = PositionedSoundInstance.master(sound, 1.0f);
-        soundInstance.getSoundSet(manager);
-        if (soundInstance.getSound().equals(SoundManager.MISSING_SOUND)) {
+        WeightedSoundSet soundSet = manager.get(sound);
+        if (soundSet == null || soundSet.getSound() == SoundManager.MISSING_SOUND) {
             return false;
         }
-        manager.play(soundInstance, delay);
+        manager.play(PositionedSoundInstance.master(sound, 1.0f), delay);
         return true;
     }
 }

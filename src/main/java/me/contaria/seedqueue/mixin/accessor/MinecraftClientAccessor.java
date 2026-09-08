@@ -7,12 +7,12 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 
 @Mixin(MinecraftClient.class)
 public interface MinecraftClientAccessor {
-    @Invoker("render")
-    void seedQueue$render(boolean tick);
-
-    @Accessor("thread")
+    @Accessor("currentThread")
     Thread seedQueue$getThread();
 
     @Invoker("handleProfilerKeyPress")
     void seedQueue$handleProfilerKeyPress(int digit);
+
+    @Invoker("runGameLoop")
+    void seedQueue$runGameLoop();
 }

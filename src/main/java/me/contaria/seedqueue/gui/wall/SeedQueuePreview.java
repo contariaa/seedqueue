@@ -1,41 +1,31 @@
 package me.contaria.seedqueue.gui.wall;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.platform.GlStateManager;
 import me.contaria.seedqueue.SeedQueue;
 import me.contaria.seedqueue.SeedQueueEntry;
 import me.contaria.seedqueue.compat.SeedQueuePreviewFrameBuffer;
-import me.contaria.seedqueue.compat.SeedQueuePreviewProperties;
 import me.contaria.seedqueue.customization.LockTexture;
-import me.contaria.seedqueue.interfaces.SQWorldGenerationProgressTracker;
-import me.contaria.seedqueue.mixin.accessor.WorldRendererAccessor;
-import me.contaria.speedrunapi.config.SpeedrunConfigAPI;
+import me.contaria.seedqueue.worldpreview.WorldPreview;
+import me.contaria.seedqueue.worldpreview.WorldPreviewProperties;
 import me.voidxwalker.autoreset.Atum;
 import me.voidxwalker.autoreset.interfaces.ISeedStringHolder;
-import me.voidxwalker.worldpreview.WorldPreview;
-import me.voidxwalker.worldpreview.WorldPreviewProperties;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawableHelper;
-import net.minecraft.client.gui.WorldGenerationProgressTracker;
-import net.minecraft.client.gui.screen.LevelLoadingScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.render.WorldRenderer;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.Util;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.resource.language.I18n;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 public class SeedQueuePreview extends DrawableHelper {
     private final SeedQueueWallScreen wall;
     private final SeedQueueEntry seedQueueEntry;
-    private final WorldGenerationProgressTracker tracker;
-    private SeedQueuePreviewProperties previewProperties;
+    private WorldPreviewProperties previewProperties;
     private WorldRenderer worldRenderer;
 
     private final MinecraftClient client;
@@ -44,36 +34,32 @@ public class SeedQueuePreview extends DrawableHelper {
     private final int height;
 
     private final List<ButtonWidget> buttons;
-    private final boolean showMenu;
     private final String seedString;
     private final LockTexture lockTexture;
 
     private long cooldownStart;
-    private boolean rendered;
+    private boolean allowInteractions;
     private int lastPreviewFrame;
 
     public SeedQueuePreview(SeedQueueWallScreen wall, SeedQueueEntry seedQueueEntry) {
         this.wall = wall;
         this.seedQueueEntry = seedQueueEntry;
-        this.tracker = Objects.requireNonNull(seedQueueEntry.getWorldGenerationProgressTracker());
 
         this.client = MinecraftClient.getInstance();
 
         // forceUnicodeFont is not being loaded from the settings cache because it is not included in SeedQueueSettingsCache.PREVIEW_SETTINGS
         int scale = SeedQueue.config.calculateSimulatedScaleFactor(
                 this.seedQueueEntry.getSettingsCache() != null ? (int) this.seedQueueEntry.getSettingsCache().getValue("guiScale") : MinecraftClient.getInstance().options.guiScale,
-                MinecraftClient.getInstance().options.forceUnicodeFont
+                MinecraftClient.getInstance().options.forcesUnicodeFont
         );
         this.width = (int) Math.ceil((double) SeedQueue.config.simulatedWindowSize.width() / scale);
         this.height = (int) Math.ceil((double) SeedQueue.config.simulatedWindowSize.height() / scale);
 
-        this.buttons = WorldPreviewProperties.createMenu(this.width, this.height, () -> {}, () -> {});
-        this.showMenu = !Boolean.TRUE.equals(SpeedrunConfigAPI.getConfigValue("standardsettings", "autoF3Esc"));
+        this.buttons = WorldPreviewProperties.createMenu(this.width, this.height);
 
-        if (Atum.inDemoMode()) {
-            this.seedString = "North Carolina";
-        } else if (Atum.getSeedProvider().shouldShowSeed()) {
-            this.seedString = ((ISeedStringHolder) this.seedQueueEntry.getServer().getSaveProperties().getGeneratorOptions()).atum$getSeedString();
+        if (Atum.getSeedProvider().shouldShowSeed()) {
+            //noinspection DataFlowIssue
+            this.seedString = ((ISeedStringHolder) (Object) this.seedQueueEntry.getLevelInfo()).atum$getSeedString();
         } else {
             this.seedString = "Set Seed";
         }
@@ -84,9 +70,6 @@ public class SeedQueuePreview extends DrawableHelper {
     }
 
     private void updatePreviewProperties() {
-        if (this.isOnlyDrawingChunkmap()) {
-            return;
-        }
         if (this.previewProperties == (this.previewProperties = this.seedQueueEntry.getPreviewProperties())) {
             return;
         }
@@ -100,35 +83,32 @@ public class SeedQueuePreview extends DrawableHelper {
         }
     }
 
-    public void render(MatrixStack matrices) {
+    public void render() {
         this.updatePreviewProperties();
 
         this.wall.setOrtho(this.width, this.height);
-        if (this.isOnlyDrawingChunkmap()) {
-            this.rendered = this.isChunkmapReady();
-        } else if (!this.isPreviewReady()) {
+        if (!this.isPreviewReady()) {
             SeedQueuePreview.renderBackground(this.width, this.height);
             if (this.previewProperties != null) {
                 this.buildChunks();
             }
+            this.renderLoading();
         } else {
-            this.renderPreview(matrices);
-            this.rendered = true;
+            this.renderPreview();
+            if (!this.seedQueueEntry.getServer().isLoading()) {
+                this.renderLoadingInCorner();
+            }
+            this.allowInteractions = true;
         }
 
-        if (!this.seedQueueEntry.isReady()) {
-            this.renderLoading(matrices);
-        } else if ((SeedQueue.config.chunkMapFreezing != -1 && !this.seedQueueEntry.isLocked()) || this.isOnlyDrawingChunkmap()) {
-            this.renderChunkmap(matrices);
-        }
         this.wall.resetOrtho();
     }
 
-    private void renderPreview(MatrixStack matrices) {
+    private void renderPreview() {
         SeedQueuePreviewFrameBuffer frameBuffer = this.seedQueueEntry.getFrameBuffer();
         if (this.previewProperties != null) {
-            if (this.shouldRedrawPreview() && frameBuffer.updateRenderData(this.worldRenderer)) {
-                this.redrawPreview(matrices, frameBuffer);
+            if (this.shouldRedrawPreview()) {
+                this.redrawPreview(frameBuffer);
             } else {
                 this.buildChunks();
             }
@@ -137,30 +117,48 @@ public class SeedQueuePreview extends DrawableHelper {
         frameBuffer.draw(this.width, this.height);
     }
 
-    private void redrawPreview(MatrixStack matrices, SeedQueuePreviewFrameBuffer frameBuffer) {
+    private void redrawPreview(SeedQueuePreviewFrameBuffer frameBuffer) {
         frameBuffer.beginWrite();
         // related to WorldRendererMixin#doNotClearOnWallScreen
         // the suppressed call usually renders a light blue overlay over the entire screen,
         // instead we draw it onto the preview ourselves
-        DrawableHelper.fill(matrices, 0, 0, this.width, this.height, -5323025);
-        this.run(properties -> properties.render(matrices, 0, 0, 0.0f, this.buttons, this.width, this.height, this.showMenu));
+        DrawableHelper.fill(0, 0, this.width, this.height, -5323025);
+        this.run(properties -> properties.render(0, 0, this.buttons, this.width, this.height));
         frameBuffer.endWrite();
 
-        this.client.getFramebuffer().beginWrite(false);
+        this.client.getFramebuffer().bind(false);
         this.wall.refreshViewport();
         this.lastPreviewFrame = this.wall.frame;
     }
 
-    private void renderLoading(MatrixStack matrices) {
-        // see LevelLoadingScreen#render
-        this.renderChunkmap(matrices);
-        this.drawCenteredString(matrices, this.client.textRenderer, MathHelper.clamp(this.tracker.getProgressPercentage(), 0, 100) + "%", 45, this.height - 75 - 9 / 2 - 30, 16777215);
-        this.drawCenteredString(matrices, this.client.textRenderer, this.seedString, 45, this.height - 75 - 9 / 2 - 50, 16777215);
+    private void renderLoading() {
+        String title = I18n.translate("menu.loadingLevel");
+        this.client.textRenderer.drawWithShadow(title, (this.width - this.client.textRenderer.getStringWidth(title)) / 2.0f, this.height / 2.0f - 4 - 16, 16777215);
+
+        String operation = this.seedQueueEntry.getServer().getServerOperation();
+        if (operation != null) {
+            String task = I18n.translate(operation);
+            this.client.textRenderer.drawWithShadow(task, (this.width - this.client.textRenderer.getStringWidth(task)) / 2.0f, this.height / 2.0f - 4 + 8, 16777215);
+        }
+
+        if (this.seedString != null && !this.seedString.isEmpty()) {
+            this.client.textRenderer.drawWithShadow(this.seedString, (this.width - this.client.textRenderer.getStringWidth(this.seedString)) / 2.0f, this.height / 2.0f - 4 - 40, 16777215);
+        }
     }
 
-    private void renderChunkmap(MatrixStack matrices) {
-        WorldGenerationProgressTracker tracker = this.seedQueueEntry.isLocked() ? this.tracker : ((SQWorldGenerationProgressTracker) this.tracker).seedQueue$getFrozenCopy().orElse(this.tracker);
-        LevelLoadingScreen.drawChunkMap(matrices, tracker, 45, this.height - 75 + 30, 2, 0);
+    private void renderLoadingInCorner() {
+        String title = I18n.translate("menu.loadingLevel");
+        this.client.textRenderer.drawWithShadow(title, 5, this.height - 5 - 9 - 24, 16777215);
+
+        String operation = this.seedQueueEntry.getServer().getServerOperation();
+        if (operation != null) {
+            String task = I18n.translate(operation);
+            this.client.textRenderer.drawWithShadow(task, 5, this.height - 5 - 9, 16777215);
+        }
+
+        if (this.seedString != null && !this.seedString.isEmpty()) {
+            this.client.textRenderer.drawWithShadow(this.seedString, 5, this.height - 5 - 9 - 40, 16777215);
+        }
     }
 
     public void build() {
@@ -174,7 +172,8 @@ public class SeedQueuePreview extends DrawableHelper {
         this.run(properties -> {
             properties.tickPackets();
             properties.tickEntities();
-            ((SeedQueuePreviewProperties) properties).buildChunks();
+            properties.tickWorld();
+            properties.buildChunks();
         });
     }
 
@@ -191,36 +190,29 @@ public class SeedQueuePreview extends DrawableHelper {
         }
     }
 
-    private boolean isOnlyDrawingChunkmap() {
-        return SeedQueue.config.isChunkmapResetting() && (!this.seedQueueEntry.isLocked() || this.canDrawOnlyChunkmapIfLocked());
-    }
-
-    private boolean canDrawOnlyChunkmapIfLocked() {
-        return SeedQueue.config.freezeLockedPreviews || (this.wall.layout.locked != null && this.wall.layout.locked.size() == 0);
-    }
-
     private boolean shouldRedrawPreview() {
         return this.lastPreviewFrame == 0 || this.wall.frame - this.lastPreviewFrame >= SeedQueue.config.wallFPS / SeedQueue.config.previewFPS;
     }
 
-    private boolean isChunkmapReady() {
-        return ((SQWorldGenerationProgressTracker) this.tracker).seedQueue$shouldFreeze();
+    private boolean isPreviewReady() {
+        return this.seedQueueEntry.hasFrameBuffer() || (this.worldRenderer != null && this.getCompletedChunkCount() > 0);
     }
 
-    private boolean isPreviewReady() {
-        return this.seedQueueEntry.hasFrameBuffer() || (this.worldRenderer != null && ((WorldRendererAccessor) this.worldRenderer).seedQueue$getCompletedChunkCount() > 0);
+    private int getCompletedChunkCount() {
+        String string = this.worldRenderer.getChunksDebugString();
+        return Integer.parseInt(string.substring("C: ".length(), string.indexOf('/')));
     }
 
     public boolean isRenderingReady() {
-        return SeedQueue.config.isChunkmapResetting() ? this.isChunkmapReady() : this.isPreviewReady();
+        return this.isPreviewReady();
     }
 
-    public boolean hasRendered() {
-        return this.rendered;
+    public boolean areInteractionsAllowed() {
+        return this.allowInteractions;
     }
 
     protected boolean canReset(boolean ignoreLock, boolean ignoreResetCooldown) {
-        return this.rendered && (!this.seedQueueEntry.isLocked() || ignoreLock) && (this.isCooldownReady() || ignoreResetCooldown) && !this.seedQueueEntry.isLoaded();
+        return this.allowInteractions && (!this.seedQueueEntry.isLocked() || ignoreLock) && (this.isCooldownReady() || ignoreResetCooldown) && !this.seedQueueEntry.isLoaded();
     }
 
     protected void resetCooldown() {
@@ -228,25 +220,26 @@ public class SeedQueuePreview extends DrawableHelper {
     }
 
     protected void populateCooldownStart(long cooldownStart) {
-        if (this.rendered && this.cooldownStart == Long.MAX_VALUE) {
+        if (this.allowInteractions && this.cooldownStart == Long.MAX_VALUE) {
             this.cooldownStart = cooldownStart;
         }
     }
 
     private boolean isCooldownReady() {
-        return Util.getMeasuringTimeMs() - this.cooldownStart >= SeedQueue.config.resetCooldown;
+        return (System.nanoTime() / 1000000L) - this.cooldownStart >= SeedQueue.config.resetCooldown;
     }
 
     public void printDebug() {
+        SeedQueue.LOGGER.warn("allowInteractions: {}, cooldownStart: {}, canReset(false, false): {}, isCooldownReady(): {}", allowInteractions, cooldownStart, canReset(false, false), isCooldownReady());
         if (this.worldRenderer != null) {
-            SeedQueue.LOGGER.info("SeedQueue-DEBUG | Instance: {}, Seed: {}, World Gen %: {}, Chunks: {} ({}), locked: {}, paused: {}, ready: {}", this.seedQueueEntry.getSession().getDirectoryName(), this.seedQueueEntry.getServer().getSaveProperties().getGeneratorOptions().getSeed(), this.seedQueueEntry.getProgressPercentage(), this.worldRenderer.getChunksDebugString(), this.worldRenderer.isTerrainRenderComplete(), this.seedQueueEntry.isLocked(), this.seedQueueEntry.isPaused(), this.seedQueueEntry.isReady());
+            SeedQueue.LOGGER.info("SeedQueue-DEBUG | Instance: {}, Seed: {}, World Gen %: {}, Chunks: {}, locked: {}, paused: {}, ready: {}", this.seedQueueEntry.getServer().getLevelName(), this.seedQueueEntry.getLevelInfo().getSeed(), this.seedQueueEntry.getProgressPercentage(), this.worldRenderer.getChunksDebugString(), this.seedQueueEntry.isLocked(), this.seedQueueEntry.isPaused(), this.seedQueueEntry.isReady());
         } else {
-            SeedQueue.LOGGER.info("SeedQueue-DEBUG | Instance: {}, Seed: {}, World Gen %: {}", this.seedQueueEntry.getSession().getDirectoryName(), this.seedQueueEntry.getServer().getSaveProperties().getGeneratorOptions().getSeed(), this.seedQueueEntry.getProgressPercentage());
+            SeedQueue.LOGGER.info("SeedQueue-DEBUG | Instance: {}, Seed: {}, World Gen %: {}", this.seedQueueEntry.getServer().getLevelName(), this.seedQueueEntry.getLevelInfo().getSeed(), this.seedQueueEntry.getProgressPercentage());
         }
     }
 
     public void printStacktrace() {
-        SeedQueue.LOGGER.info("SeedQueue-DEBUG | Instance: {}, Stacktrace: {}", this.seedQueueEntry.getSession().getDirectoryName(), Arrays.toString(this.seedQueueEntry.getServer().getThread().getStackTrace()));
+        SeedQueue.LOGGER.info("SeedQueue-DEBUG | Instance: {}, Stacktrace: {}", this.seedQueueEntry.getServer().getLevelName(), Arrays.toString(this.seedQueueEntry.getServer().getThread().getStackTrace()));
     }
 
     public SeedQueueEntry getSeedQueueEntry() {
@@ -258,12 +251,11 @@ public class SeedQueuePreview extends DrawableHelper {
     }
 
     // see Screen#renderBackground
-    @SuppressWarnings("deprecation")
     public static void renderBackground(int width, int height) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder buffer = tessellator.getBuffer();
-        MinecraftClient.getInstance().getTextureManager().bindTexture(BACKGROUND_TEXTURE);
-        RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
+        MinecraftClient.getInstance().getTextureManager().bindTexture(OPTIONS_BACKGROUND_TEXTURE);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         buffer.begin(7, VertexFormats.POSITION_TEXTURE_COLOR);
         buffer.vertex(0.0, height, 0.0).texture(0.0F, height / 32.0F).color(64, 64, 64, 255).next();
         buffer.vertex(width, height, 0.0).texture(width / 32.0F, height / 32.0F).color(64, 64, 64, 255).next();

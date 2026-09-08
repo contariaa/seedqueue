@@ -13,20 +13,16 @@ import me.contaria.speedrunapi.config.SpeedrunConfigContainer;
 import me.contaria.speedrunapi.config.api.SpeedrunConfig;
 import me.contaria.speedrunapi.config.api.SpeedrunOption;
 import me.contaria.speedrunapi.config.api.annotations.Config;
-import me.contaria.speedrunapi.util.TextUtil;
+import me.contaria.speedrunapi.config.api.gui.CallbackButtonWidget;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ConfirmScreen;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ScreenTexts;
 import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.text.StringRenderable;
+import net.minecraft.client.resource.language.I18n;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 /**
  * Config class based on SpeedrunAPI, initialized on prelaunch.
@@ -34,13 +30,8 @@ import java.util.Objects;
  * When implementing new options, make sure no Minecraft classes are loaded during initialization!
  */
 @SuppressWarnings("FieldMayBeFinal")
-@Config(init = Config.InitPoint.PRELAUNCH)
 public class SeedQueueConfig implements SpeedrunConfig {
-    static final int AUTO = 0;
-
-    private static final int PROCESSORS = Runtime.getRuntime().availableProcessors();
-
-    private static final boolean CAN_USE_WALL = ModCompat.HAS_WORLDPREVIEW && ModCompat.HAS_STANDARDSETTINGS && ModCompat.HAS_SODIUM;
+    private static final boolean CAN_USE_WALL = ModCompat.HAS_STANDARDSETTINGS;
 
     @Config.Ignored
     public SpeedrunConfigContainer<?> container;
@@ -56,13 +47,6 @@ public class SeedQueueConfig implements SpeedrunConfig {
     @Config.Category("queue")
     @Config.Numbers.Whole.Bounds(min = 1, max = 30)
     public int maxConcurrently_onWall = 1;
-
-    @Config.Category("queue")
-    @Config.Numbers.Whole.Bounds(max = 100)
-    public int maxWorldGenerationPercentage = 100;
-
-    @Config.Category("queue")
-    public boolean resumeOnFilledQueue = false;
 
     @Config.Category("wall")
     public boolean useWall = false;
@@ -104,14 +88,18 @@ public class SeedQueueConfig implements SpeedrunConfig {
     public int preparingPreviews = -1; // auto
 
     @Config.Category("performance")
-    public boolean freezeLockedPreviews = false;
-
-    @Config.Category("performance")
     public boolean reduceLevelList = true;
 
-    @Config.Category("misc")
-    @Config.Numbers.Whole.Bounds(min = -1, max = 500, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
-    public long chunkMapFreezing = -1;
+    @Config.Category("worldpreview")
+    public boolean generateFakePreview = true;
+
+    @Config.Category("worldpreview")
+    @Config.Numbers.Whole.Bounds(min = 1, max = 16)
+    public int previewChunkDistance = 5;
+
+    @Config.Category("worldpreview")
+    @Config.Numbers.Whole.Bounds(min = 1, max = 100)
+    public int previewDataLimit = 50;
 
     @Config.Category("advanced")
     public boolean showAdvancedSettings = false;
@@ -124,30 +112,6 @@ public class SeedQueueConfig implements SpeedrunConfig {
     @Config.Numbers.Whole.Bounds(min = Thread.MIN_PRIORITY, max = Thread.NORM_PRIORITY)
     public int serverThreadPriority = 4;
 
-    @Config.Category("threading")
-    @Config.Numbers.Whole.Bounds(min = 0, max = 32, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
-    protected int backgroundExecutorThreads = AUTO;
-
-    @Config.Category("threading")
-    @Config.Numbers.Whole.Bounds(min = Thread.MIN_PRIORITY, max = Thread.NORM_PRIORITY)
-    public int backgroundExecutorThreadPriority = 3;
-
-    @Config.Category("threading")
-    @Config.Numbers.Whole.Bounds(min = 0, max = 32, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
-    protected int wallExecutorThreads = AUTO;
-
-    @Config.Category("threading")
-    @Config.Numbers.Whole.Bounds(min = Thread.MIN_PRIORITY, max = Thread.NORM_PRIORITY)
-    public int wallExecutorThreadPriority = 4;
-
-    @Config.Category("threading")
-    @Config.Numbers.Whole.Bounds(min = 0, max = 8, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
-    private int chunkUpdateThreads = AUTO;
-
-    @Config.Category("threading")
-    @Config.Numbers.Whole.Bounds(min = Thread.MIN_PRIORITY, max = Thread.NORM_PRIORITY)
-    public int chunkUpdateThreadPriority = 3;
-
     @Config.Category("debug")
     public boolean showDebugMenu = false;
 
@@ -158,9 +122,6 @@ public class SeedQueueConfig implements SpeedrunConfig {
 
     @Config.Category("debug")
     public boolean useWatchdog = false;
-
-    @Config.Category("debug")
-    public boolean showChunkMaps = false;
 
     @Config.Category("wall")
     public final SeedQueueMultiKeyBinding[] keyBindings = new SeedQueueMultiKeyBinding[]{
@@ -182,49 +143,6 @@ public class SeedQueueConfig implements SpeedrunConfig {
         SeedQueue.config = this;
     }
 
-    /**
-     * Returns the amount of threads the Background Executor should use according to {@link SeedQueueConfig#backgroundExecutorThreads}.
-     * Calculates a good default based on {@link SeedQueueConfig#maxConcurrently} if set to {@link SeedQueueConfig#AUTO}.
-     *
-     * @return The parallelism to be used for the Background Executor Service.
-     */
-    public int getBackgroundExecutorThreads() {
-        if (this.backgroundExecutorThreads == AUTO) {
-            return Math.max(1, Math.min(this.maxConcurrently + 1, PROCESSORS));
-        }
-        return this.backgroundExecutorThreads;
-    }
-
-    /**
-     * Returns the amount of threads the Wall Executor should use according to {@link SeedQueueConfig#wallExecutorThreads}.
-     * The amount of available processors is used if set to {@link SeedQueueConfig#AUTO}.
-     *
-     * @return The parallelism to be used for the Background Executor Service.
-     */
-    public int getWallExecutorThreads() {
-        if (this.wallExecutorThreads == AUTO) {
-            return Math.max(1, PROCESSORS);
-        }
-        return this.wallExecutorThreads;
-    }
-
-    /**
-     * Returns the amount of worker threads created PER WorldRenderer on the Wall Screen according to {@link SeedQueueConfig#chunkUpdateThreads}.
-     * Calculates a sane default if set to {@link SeedQueueConfig#AUTO}.
-     *
-     * @return The amount of Sodium worker threads to launch on the Wall Screen.
-     */
-    public int getChunkUpdateThreads() {
-        if (this.chunkUpdateThreads == AUTO) {
-            return Math.min(Math.max(2, (int) Math.ceil((double) PROCESSORS / this.maxConcurrently_onWall)), PROCESSORS);
-        }
-        return this.chunkUpdateThreads;
-    }
-
-    public boolean shouldUseWall() {
-        return CAN_USE_WALL && this.maxCapacity > 0 && this.useWall;
-    }
-
     // see Window#calculateScaleFactor
     public int calculateSimulatedScaleFactor(int guiScale, boolean forceUnicodeFont) {
         int scaleFactor = 1;
@@ -237,10 +155,8 @@ public class SeedQueueConfig implements SpeedrunConfig {
         return scaleFactor;
     }
 
-    public boolean isChunkmapResetting() {
-        return this.chunkMapFreezing != -1 &&
-                this.simulatedWindowSize.width() <= 90 &&
-                this.simulatedWindowSize.height() <= 90;
+    public boolean shouldUseWall() {
+        return CAN_USE_WALL && this.maxCapacity > 0 && this.useWall;
     }
 
     @Override
@@ -249,35 +165,29 @@ public class SeedQueueConfig implements SpeedrunConfig {
             return new SpeedrunConfigAPI.CustomOption.Builder<Boolean>(config, this, field, idPrefix)
                     .createWidget((option, config_, configStorage, optionField) -> {
                         if (!CAN_USE_WALL) {
-                            ButtonWidget button = new ButtonWidget(0, 0, 150, 20, TextUtil.translatable("seedqueue.menu.config.useWall.notAvailable"), b -> {}, ((b, matrices, mouseX, mouseY) -> {
-                                List<StringRenderable> tooltip = new ArrayList<>(MinecraftClient.getInstance().textRenderer.wrapLines(TextUtil.translatable("seedqueue.menu.config.useWall.notAvailable.tooltip"), 200));
-                                for (int i = 1; i <= 3; i++) {
-                                    tooltip.add(TextUtil.translatable("seedqueue.menu.config.useWall.notAvailable.tooltip." + i));
-                                }
-                                Objects.requireNonNull(MinecraftClient.getInstance().currentScreen).renderTooltip(matrices, tooltip, mouseX, mouseY);
-                            }));
-                            button.active = false;
-                            return button;
+                            ButtonWidget widget = new ButtonWidget(-1, 0, 0, 150, 20, I18n.translate("seedqueue.menu.config.useWall.notAvailable"));
+                            widget.active = false;
+                            return widget;
                         }
-                        return new ButtonWidget(0, 0, 150, 20, ScreenTexts.getToggleText(option.get()), button -> {
+                        return new CallbackButtonWidget(I18n.translate(option.get() ? "options.on" : "options.off"), button -> {
                             option.set(!option.get());
-                            button.setMessage(ScreenTexts.getToggleText(option.get()));
+                            button.message = I18n.translate(option.get() ? "options.on" : "options.off");
                         });
                     })
                     .build();
         }
         if ("showAdvancedSettings".equals(field.getName())) {
             return new SpeedrunConfigAPI.CustomOption.Builder<Boolean>(config, this, field, idPrefix)
-                    .createWidget((option, config_, configStorage, optionField) -> new ButtonWidget(0, 0, 150, 20, ScreenTexts.getToggleText(option.get()), button -> {
+                    .createWidget((option, config_, configStorage, optionField) -> new CallbackButtonWidget(I18n.translate(option.get() ? "options.on" : "options.off"), button -> {
                         if (!option.get()) {
                             Screen configScreen = MinecraftClient.getInstance().currentScreen;
-                            MinecraftClient.getInstance().openScreen(new ConfirmScreen(confirm -> {
+                            MinecraftClient.getInstance().setScreen(new ConfirmScreen((confirm, id) -> {
                                 option.set(confirm);
-                                MinecraftClient.getInstance().openScreen(configScreen);
-                            }, TextUtil.translatable("seedqueue.menu.config.showAdvancedSettings.confirm.title"), TextUtil.translatable("seedqueue.menu.config.showAdvancedSettings.confirm.message"), ScreenTexts.YES, ScreenTexts.CANCEL));
+                                MinecraftClient.getInstance().setScreen(configScreen);
+                            }, I18n.translate("seedqueue.menu.config.showAdvancedSettings.confirm.title"), I18n.translate("seedqueue.menu.config.showAdvancedSettings.confirm.message"), I18n.translate("gui.yes"), I18n.translate("gui.cancel"), 0));
                         } else {
                             option.set(false);
-                            MinecraftClient.getInstance().openScreen(MinecraftClient.getInstance().currentScreen);
+                            MinecraftClient.getInstance().setScreen(MinecraftClient.getInstance().currentScreen);
                         }
                     }))
                     .build();
@@ -309,7 +219,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
                     .setter((option, config_, configStorage, optionField, value) -> {
                         throw new UnsupportedOperationException();
                     })
-                    .createWidget((option, config_, configStorage, optionField) -> new ButtonWidget(0, 0, 150, 20, TextUtil.translatable("seedqueue.menu.keys.configure"), button -> MinecraftClient.getInstance().openScreen(new SeedQueueKeybindingsScreen(MinecraftClient.getInstance().currentScreen, this.keyBindings))))
+                    .createWidget((option, config_, configStorage, optionField) -> new CallbackButtonWidget(I18n.translate("seedqueue.menu.keys.configure"), button -> MinecraftClient.getInstance().setScreen(new SeedQueueKeybindingsScreen(MinecraftClient.getInstance().currentScreen, this.keyBindings))))
                     .build();
         }
         return SpeedrunConfig.super.parseField(field, config, idPrefix);
@@ -353,7 +263,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
 
         public int width() {
             if (this.width == 0) {
-                this.width = MinecraftClient.getInstance().getWindow().getWidth();
+                this.width = MinecraftClient.getInstance().width;
             }
             return this.width;
         }
@@ -364,7 +274,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
 
         public int height() {
             if (this.height == 0) {
-                this.height = MinecraftClient.getInstance().getWindow().getHeight();
+                this.height = MinecraftClient.getInstance().height;
             }
             return this.height;
         }

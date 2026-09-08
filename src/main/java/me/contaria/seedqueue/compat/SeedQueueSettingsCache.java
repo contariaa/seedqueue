@@ -2,11 +2,10 @@ package me.contaria.seedqueue.compat;
 
 import me.contaria.seedqueue.SeedQueue;
 import me.contaria.seedqueue.SeedQueueEntry;
-import me.contaria.seedqueue.mixin.accessor.PlayerEntityAccessor;
 import me.contaria.standardsettings.StandardSettingsCache;
 import me.contaria.standardsettings.options.PlayerModelPartStandardSetting;
 import me.contaria.standardsettings.options.StandardSetting;
-import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.entity.player.ClientPlayerEntity;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -25,7 +24,7 @@ public class SeedQueueSettingsCache extends StandardSettingsCache {
     // see SeedQueuePreviewProperties#getPerspective
     private static final Set<String> PREVIEW_SETTINGS = new HashSet<>(Arrays.asList(
             "biomeBlendRadius",
-            "graphicsMode",
+            "fancyGraphics",
             "renderDistance",
             "ao",
             "guiScale",
@@ -83,7 +82,7 @@ public class SeedQueueSettingsCache extends StandardSettingsCache {
                 playerModelPartsBitMask |= ((PlayerModelPartStandardSetting) entry.setting).playerModelPart.getBitFlag();
             }
         }
-        player.getDataTracker().set(PlayerEntityAccessor.seedQueue$getPLAYER_MODEL_PARTS(), (byte) playerModelPartsBitMask);
+        player.getDataTracker().setProperty(10, (byte) playerModelPartsBitMask);
     }
 
     /**

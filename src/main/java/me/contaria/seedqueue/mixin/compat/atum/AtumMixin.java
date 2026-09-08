@@ -5,6 +5,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import me.contaria.seedqueue.SeedQueue;
 import me.contaria.seedqueue.SeedQueueEntry;
 import me.contaria.seedqueue.compat.ModCompat;
+import me.contaria.seedqueue.gui.config.SeedQueueKeybindingsScreen;
 import me.contaria.seedqueue.gui.wall.SeedQueueWallScreen;
 import me.contaria.seedqueue.sounds.SeedQueueSounds;
 import me.voidxwalker.autoreset.Atum;
@@ -15,6 +16,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Optional;
 
@@ -25,11 +27,14 @@ public abstract class AtumMixin {
             method = "createNewWorld",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/MinecraftClient;openScreen(Lnet/minecraft/client/gui/screen/Screen;)V",
+                    target = "Lnet/minecraft/client/MinecraftClient;setScreen(Lnet/minecraft/client/gui/screen/Screen;)V",
                     remap = true
             )
     )
     private static void openSeedQueueWallScreen(MinecraftClient client, Screen screen, Operation<Void> original) {
+        if (!SeedQueue.isActive()) {
+            SeedQueue.start();
+        }
         if (!SeedQueue.isActive()) {
             original.call(client, screen);
             return;
@@ -46,11 +51,11 @@ public abstract class AtumMixin {
             }
             // standardsettings can cause the current screen to be re-initialized,
             // so we open an intermission screen to avoid atum reset logic being called twice
-            client.openScreen(new ProgressScreen());
+            client.setScreen(new ProgressScreen());
             ModCompat.standardsettings$reset();
             ModCompat.stateoutput$setWallState();
             SeedQueueSounds.play(SeedQueueSounds.OPEN_WALL);
-            client.openScreen(new SeedQueueWallScreen());
+            client.setScreen(new SeedQueueWallScreen());
             return;
         }
         if (!SeedQueue.playEntry()) {
@@ -64,5 +69,16 @@ public abstract class AtumMixin {
     )
     private static void stopSeedQueueOnAtumStop(CallbackInfo ci) {
         SeedQueue.stop();
+    }
+
+    @Inject(
+            method = "canReset",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private static void test(CallbackInfoReturnable<Boolean> cir) {
+        if (SeedQueue.isOnWall() || MinecraftClient.getInstance().currentScreen instanceof SeedQueueKeybindingsScreen) {
+            cir.setReturnValue(false);
+        }
     }
 }

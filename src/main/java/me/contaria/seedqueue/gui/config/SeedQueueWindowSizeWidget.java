@@ -1,46 +1,47 @@
 package me.contaria.seedqueue.gui.config;
 
 import me.contaria.seedqueue.SeedQueueConfig;
-import me.contaria.speedrunapi.util.TextUtil;
+import me.contaria.speedrunapi.config.api.gui.SpeedrunWidget;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.Element;
-import net.minecraft.client.gui.ParentElement;
-import net.minecraft.client.gui.widget.AbstractButtonWidget;
+import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gui.widget.PagedEntryListWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.StringRenderable;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-public class SeedQueueWindowSizeWidget extends AbstractButtonWidget implements ParentElement {
-    private static final StringRenderable X = StringRenderable.plain("X");
-
+public class SeedQueueWindowSizeWidget implements SpeedrunWidget {
     private final SeedQueueConfig.WindowSize windowSize;
     private final TextFieldWidget widthWidget;
     private final TextFieldWidget heightWidget;
 
-    @Nullable
-    private Element focused;
-    private boolean isDragging;
+    private final int width;
+    private final int height;
+    private int x;
+    private int y;
 
     public SeedQueueWindowSizeWidget(SeedQueueConfig.WindowSize windowSize) {
-        super(0, 0, 150, 20, TextUtil.empty());
         this.windowSize = windowSize;
-        this.widthWidget = new TextFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, 65, 20, TextUtil.empty());
+        this.widthWidget = new TextFieldWidget(2, MinecraftClient.getInstance().textRenderer, 0, 0, 65, 20);
         this.widthWidget.setText(String.valueOf(this.windowSize.width()));
-        this.widthWidget.setChangedListener(text -> {
-            if (text.isEmpty()) {
-                // set width to 0 without updating the text
-                this.windowSize.setWidth(0);
-                return;
+        this.widthWidget.setListener(new PagedEntryListWidget.Listener() {
+            @Override
+            public void setBooleanValue(int id, boolean value) {
             }
-            this.windowSize.setWidth(Integer.parseUnsignedInt(text));
-            String newText = String.valueOf(this.windowSize.width());
-            if (!text.equals(newText)) {
-                this.widthWidget.setText(newText);
+
+            @Override
+            public void setFloatValue(int id, float value) {
+            }
+
+            @Override
+            public void setStringValue(int id, String text) {
+                SeedQueueConfig.WindowSize windowSize = SeedQueueWindowSizeWidget.this.windowSize;
+                if (text.isEmpty()) {
+                    windowSize.setWidth(0);
+                    return;
+                }
+                windowSize.setWidth(Integer.parseUnsignedInt(text));
+                String newText = String.valueOf(windowSize.width());
+                if (!text.equals(newText)) {
+                    SeedQueueWindowSizeWidget.this.widthWidget.setText(newText);
+                }
             }
         });
         this.widthWidget.setTextPredicate(text -> {
@@ -50,17 +51,29 @@ public class SeedQueueWindowSizeWidget extends AbstractButtonWidget implements P
                 return false;
             }
         });
-        this.heightWidget = new TextFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, 65, 20, TextUtil.empty());
+        this.heightWidget = new TextFieldWidget(2, MinecraftClient.getInstance().textRenderer, 0, 0, 65, 20);
         this.heightWidget.setText(String.valueOf(this.windowSize.height()));
-        this.heightWidget.setChangedListener(text -> {
-            if (text.isEmpty()) {
-                this.windowSize.setHeight(0);
-                return;
+        this.heightWidget.setListener(new PagedEntryListWidget.Listener() {
+            @Override
+            public void setBooleanValue(int id, boolean value) {
             }
-            this.windowSize.setHeight(Integer.parseUnsignedInt(text));
-            String newText = String.valueOf(this.windowSize.height());
-            if (!text.equals(newText)) {
-                this.heightWidget.setText(newText);
+
+            @Override
+            public void setFloatValue(int id, float value) {
+            }
+
+            @Override
+            public void setStringValue(int id, String text) {
+                SeedQueueConfig.WindowSize windowSize = SeedQueueWindowSizeWidget.this.windowSize;
+                if (text.isEmpty()) {
+                    windowSize.setHeight(0);
+                    return;
+                }
+                windowSize.setHeight(Integer.parseUnsignedInt(text));
+                String newText = String.valueOf(windowSize.height());
+                if (!text.equals(newText)) {
+                    SeedQueueWindowSizeWidget.this.heightWidget.setText(newText);
+                }
             }
         });
         this.heightWidget.setTextPredicate(text -> {
@@ -70,100 +83,71 @@ public class SeedQueueWindowSizeWidget extends AbstractButtonWidget implements P
                 return false;
             }
         });
+        this.width = 150;
+        this.height = 20;
+        this.x = 0;
+        this.y = 0;
     }
 
     @Override
-    public Optional<Element> hoveredElement(double mouseX, double mouseY) {
-        return ParentElement.super.hoveredElement(mouseX, mouseY);
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        return ParentElement.super.mouseClicked(mouseX, mouseY, button);
-    }
-
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        return ParentElement.super.mouseReleased(mouseX, mouseY, button);
-    }
-
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        return ParentElement.super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
-        return ParentElement.super.mouseScrolled(mouseX, mouseY, amount);
-    }
-
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        return ParentElement.super.keyPressed(keyCode, scanCode, modifiers);
-    }
-
-    @Override
-    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return ParentElement.super.keyReleased(keyCode, scanCode, modifiers);
-    }
-
-    @Override
-    public boolean charTyped(char chr, int keyCode) {
-        return ParentElement.super.charTyped(chr, keyCode);
-    }
-
-    @Override
-    public void setInitialFocus(@Nullable Element element) {
-        ParentElement.super.setInitialFocus(element);
-    }
-
-    @Override
-    public void focusOn(@Nullable Element element) {
-        ParentElement.super.focusOn(element);
-    }
-
-    @Override
-    public boolean changeFocus(boolean lookForwards) {
-        return ParentElement.super.changeFocus(lookForwards);
-    }
-
-    @Override
-    public void renderButton(MatrixStack matrices, int mouseX, int mouseY, float delta) {
+    public void render(int mouseX, int mouseY) {
         this.widthWidget.x = this.x;
         this.widthWidget.y = this.y;
-        this.widthWidget.render(matrices, mouseX, mouseY, delta);
-        this.drawCenteredText(matrices, MinecraftClient.getInstance().textRenderer, X, this.x + this.width / 2, this.y + (this.height - MinecraftClient.getInstance().textRenderer.fontHeight) / 2, 0xFFFFFF);
+        this.widthWidget.render();
+        TextRenderer textRenderer = MinecraftClient.getInstance().textRenderer;
+        textRenderer.drawWithShadow("X", this.x + (this.width - textRenderer.getStringWidth("X")) / 2.0f, this.y, 0xFFFFFF);
         this.heightWidget.x = this.x + 85;
         this.heightWidget.y = this.y;
-        this.heightWidget.render(matrices, mouseX, mouseY, delta);
+        this.heightWidget.render();
     }
 
     @Override
-    public List<? extends Element> children() {
-        List<Element> children = new ArrayList<>();
-        children.add(this.widthWidget);
-        children.add(this.heightWidget);
-        return children;
+    public boolean keyPressed(char id, int code) {
+        this.widthWidget.keyPressed(id, code);
+        this.heightWidget.keyPressed(id, code);
+        return true;
     }
 
     @Override
-    public final boolean isDragging() {
-        return this.isDragging;
+    public boolean mouseClicked(int mouseX, int mouseY, int button) {
+        this.widthWidget.mouseClicked(mouseX, mouseY, button);
+        this.heightWidget.mouseClicked(mouseX, mouseY, button);
+        return true;
     }
 
     @Override
-    public final void setDragging(boolean dragging) {
-        this.isDragging = dragging;
+    public void tick() {
+        this.widthWidget.tick();
+        this.heightWidget.tick();
     }
 
     @Override
-    @Nullable
-    public Element getFocused() {
-        return this.focused;
+    public int getX() {
+        return this.x;
     }
 
     @Override
-    public void setFocused(@Nullable Element focused) {
-        this.focused = focused;
+    public void setX(int x) {
+        this.x = x;
+    }
+
+    @Override
+    public int getY() {
+        return this.y;
+    }
+
+    @Override
+    public void setY(int y) {
+        this.y = y;
+    }
+
+    @Override
+    public int getWidth() {
+        return this.width;
+    }
+
+    @Override
+    public int getHeight() {
+        return this.height;
     }
 }

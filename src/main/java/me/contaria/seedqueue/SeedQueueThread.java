@@ -1,7 +1,5 @@
 package me.contaria.seedqueue;
 
-import me.contaria.seedqueue.gui.SeedQueueCrashToast;
-import me.contaria.speedrunapi.util.TextUtil;
 import me.voidxwalker.autoreset.AtumCreateWorldScreen;
 import net.minecraft.client.MinecraftClient;
 
@@ -36,14 +34,8 @@ public class SeedQueueThread extends Thread {
                     this.pauseSeedQueueEntry();
                     continue;
                 }
-                boolean shouldResumeAfterQueueFull = SeedQueue.shouldResumeAfterQueueFull();
-                if (!SeedQueue.shouldGenerate() || shouldResumeAfterQueueFull) {
-                    boolean shouldResumeGenerating = SeedQueue.shouldResumeGenerating();
-                    if (!shouldResumeGenerating && !SeedQueue.noLockedRemaining() && shouldResumeAfterQueueFull) {
-                        this.pauseSeedQueueEntry();
-                        continue;
-                    }
-                    if (shouldResumeGenerating && this.unpauseSeedQueueEntry()) {
+                if (!SeedQueue.shouldGenerate()) {
+                    if (SeedQueue.shouldResumeGenerating() && this.unpauseSeedQueueEntry()) {
                         continue;
                     }
                     synchronized (this.lock) {
@@ -63,10 +55,6 @@ public class SeedQueueThread extends Thread {
                 this.createSeedQueueEntry();
             } catch (Exception e) {
                 SeedQueue.LOGGER.error("Shutting down SeedQueue Thread...", e);
-                SeedQueue.scheduleTaskOnClientThread(() -> MinecraftClient.getInstance().getToastManager().add(new SeedQueueCrashToast(
-                        TextUtil.translatable("seedqueue.menu.crash.title"),
-                        TextUtil.translatable("seedqueue.menu.crash.description", e.getClass().getSimpleName())
-                )));
                 this.stopQueue();
             }
         }
@@ -110,7 +98,7 @@ public class SeedQueueThread extends Thread {
      */
     private void createSeedQueueEntry() {
         synchronized (WORLD_CREATION_LOCK) {
-            new AtumCreateWorldScreen(null).init(MinecraftClient.getInstance(), 0, 0);
+            new AtumCreateWorldScreen(null).init(MinecraftClient.getInstance(), 1, 1);
         }
     }
 

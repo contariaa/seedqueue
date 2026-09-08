@@ -1,22 +1,17 @@
 package me.contaria.seedqueue;
 
 import com.google.gson.JsonParseException;
-import me.contaria.seedqueue.compat.ModCompat;
+import me.contaria.seedqueue.compat.SeedQueuePreviewFrameBuffer;
 import me.contaria.seedqueue.debug.SeedQueueSystemInfo;
 import me.contaria.seedqueue.debug.SeedQueueWatchdog;
 import me.contaria.seedqueue.gui.wall.SeedQueueWallScreen;
-import me.contaria.seedqueue.mixin.accessor.MinecraftClientAccessor;
 import me.contaria.seedqueue.mixin.accessor.MinecraftServerAccessor;
-import me.contaria.seedqueue.sounds.SeedQueueSounds;
-import me.contaria.speedrunapi.util.TextUtil;
 import me.voidxwalker.autoreset.AttemptTracker;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.Version;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.WorldGenerationProgressTracker;
 import net.minecraft.client.gui.screen.ProgressScreen;
-import net.minecraft.client.gui.screen.SaveLevelScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.server.MinecraftServer;
 import org.apache.logging.log4j.LogManager;
@@ -37,17 +32,14 @@ public class SeedQueue implements ClientModInitializer {
 
     public static AttemptTracker.Type BENCHMARK_RESETS = new AttemptTracker.Type("Benchmark Reset #", "benchmark-resets.txt");
 
-    private static final Queue<Runnable> CLIENT_TASKS = new LinkedBlockingQueue<>();
-
     private static final Queue<SeedQueueEntry> SEED_QUEUE = new LinkedBlockingQueue<>();
     private static SeedQueueThread thread;
 
-    public static final ThreadLocal<SeedQueueEntry> LOCAL_ENTRY = new ThreadLocal<>();
     public static SeedQueueEntry currentEntry;
 
     @Override
     public void onInitializeClient() {
-        SeedQueueSounds.init();
+        LOGGER.info("Initializing SeedQueue for 1.8.9");
     }
 
     /**
@@ -99,12 +91,16 @@ public class SeedQueue implements ClientModInitializer {
         }
         // standardsettings can cause the current screen to be re-initialized,
         // so we open an intermission screen to avoid atum reset logic being called twice
-        MinecraftClient.getInstance().openScreen(new ProgressScreen());
-        MinecraftClient.getInstance().createWorld(
-                currentEntry.getSession().getDirectoryName(),
-                currentEntry.getServer().getSaveProperties().getLevelInfo(),
-                ((MinecraftServerAccessor) currentEntry.getServer()).seedQueue$getDimensionTracker(),
-                currentEntry.getServer().getSaveProperties().getGeneratorOptions()
+        MinecraftClient.getInstance().setScreen(new ProgressScreen() {
+            @Override
+            protected void keyPressed(char id, int code) {
+                // do not close on esc
+            }
+        });
+        MinecraftClient.getInstance().startIntegratedServer(
+                currentEntry.getServer().getLevelName(),
+                currentEntry.getServer().getServerName(),
+                currentEntry.getLevelInfo()
         );
         currentEntry = null;
     }
@@ -183,30 +179,6 @@ public class SeedQueue implements ClientModInitializer {
     }
 
     /**
-     * @return If all {@link SeedQueueEntry} have reached the {@link SeedQueueConfig#maxWorldGenerationPercentage}.
-     */
-    public static boolean allMaxWorldGenerationReached() {
-        for (SeedQueueEntry entry : SEED_QUEUE) {
-            if (!entry.isMaxWorldGenerationReached() && !entry.isLocked()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * @return If all currently generating {@link SeedQueueEntry} are not locked.
-     */
-    public static boolean noLockedRemaining() {
-        for (SeedQueueEntry entry : SEED_QUEUE) {
-            if (entry.isLocked() && !entry.isReady()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
      * @return If the {@link SeedQueueThread} should unpause a {@link SeedQueueEntry} that was previously scheduled to pause.
      */
     public static boolean shouldResumeGenerating() {
@@ -214,19 +186,6 @@ public class SeedQueue implements ClientModInitializer {
             return getGeneratingCount() < getMaxGeneratingCount();
         }
     }
-
-    /**
-     * @return If the {@link SeedQueueThread} should unpause a {@link SeedQueueEntry} that was previously scheduled to pause
-     * (after the queue is filled).
-     * @see SeedQueue#isFull()
-     * @see SeedQueue#allMaxWorldGenerationReached()
-     */
-    public static boolean shouldResumeAfterQueueFull() {
-        synchronized (LOCK) {
-            return config.resumeOnFilledQueue && isFull() && allMaxWorldGenerationReached();
-        }
-    }
-
 
     /**
      * @return If the {@link SeedQueueThread} should actively schedule a {@link SeedQueueEntry} to be paused.
@@ -250,7 +209,6 @@ public class SeedQueue implements ClientModInitializer {
      *
      * @param treatScheduledAsPaused If {@link SeedQueueEntry}'s that are scheduled to pause but haven't been paused yet should be added to the count.
      * @return The amount of currently generating / unpaused {@link SeedQueueEntry}'s in queue.
-     * @see SeedQueueConfig#shouldUseWall
      */
     private static long getGeneratingCount(boolean treatScheduledAsPaused) {
         long count = 0;
@@ -262,7 +220,7 @@ public class SeedQueue implements ClientModInitializer {
 
         // add 1 when not using wall and the main world is currently generating
         MinecraftServer currentServer = MinecraftClient.getInstance().getServer();
-        if (!SeedQueue.config.shouldUseWall() && (currentServer == null || !currentServer.isLoading())) {
+        if (currentServer == null || !currentServer.isLoading()) {
             count++;
         }
         return count;
@@ -355,9 +313,6 @@ public class SeedQueue implements ClientModInitializer {
     private static void clear() {
         LOGGER.info("Clearing SeedQueue...");
 
-        Screen screen = MinecraftClient.getInstance().currentScreen;
-        MinecraftClient.getInstance().setScreenAndRender(new SaveLevelScreen(TextUtil.translatable("seedqueue.menu.clearing")));
-
         synchronized (LOCK) {
             if (currentEntry != null && !currentEntry.isLoaded()) {
                 currentEntry.discard();
@@ -368,18 +323,12 @@ public class SeedQueue implements ClientModInitializer {
         SEED_QUEUE.forEach(SeedQueueEntry::discard);
 
         while (!SEED_QUEUE.isEmpty()) {
-            ((MinecraftClientAccessor) MinecraftClient.getInstance()).seedQueue$render(false);
-            SEED_QUEUE.removeIf(entry -> entry.getServer().isStopping());
+            SEED_QUEUE.removeIf(entry -> !((MinecraftServerAccessor) entry.getServer()).seedQueue$getServerThread().isAlive());
         }
 
-        SeedQueueExecutorWrapper.shutdownExecutors();
         SeedQueueWallScreen.clearWorldRenderers();
-        ModCompat.worldpreview$clearFramebufferPool();
-        ModCompat.sodium$clearShaderCache();
-        ModCompat.sodium$clearBuildBufferPool();
+        SeedQueuePreviewFrameBuffer.clearFramebufferPool();
         System.gc();
-
-        MinecraftClient.getInstance().openScreen(screen);
     }
 
     /**
@@ -412,13 +361,6 @@ public class SeedQueue implements ClientModInitializer {
     }
 
     /**
-     * @return The {@link SeedQueueEntry} corresponding to the calling server thread. Returns {@link Optional#empty()} if called before the server has created it's {@link WorldGenerationProgressTracker} because that's when the field is set!
-     */
-    public static Optional<SeedQueueEntry> getThreadLocalEntry() {
-        return Optional.ofNullable(LOCAL_ENTRY.get());
-    }
-
-    /**
      * Pings the currently active {@link SeedQueueThread}.
      */
     public static void ping() {
@@ -443,21 +385,6 @@ public class SeedQueue implements ClientModInitializer {
     }
 
     /**
-     * Schedules the given {@link Runnable} to be run on the client thread.
-     * Should be used in favor of {@link net.minecraft.util.thread.ThreadExecutor#execute} on the {@link MinecraftClient} because tasks submitted that way may be cancelled.
-     */
-    public static void scheduleTaskOnClientThread(Runnable runnable) {
-        CLIENT_TASKS.add(runnable);
-    }
-
-    public static void runClientThreadTasks() {
-        Runnable runnable;
-        while ((runnable = CLIENT_TASKS.poll()) != null) {
-            runnable.run();
-        }
-    }
-
-    /**
      * @return A {@link List} of debug information to add to the F3 screen when SeedQueue is active.
      */
     public static List<String> getDebugText() {
@@ -466,11 +393,7 @@ public class SeedQueue implements ClientModInitializer {
         debugText.add("SeedQueue v" + VERSION.getFriendlyString());
         debugText.add(String.join(", ",
                 "E: " + SEED_QUEUE.size() + "/" + SeedQueue.config.maxCapacity,
-                "C: " + SeedQueue.config.maxConcurrently
-                        + (SeedQueue.config.shouldUseWall() ? " | " + SeedQueue.config.maxConcurrently_onWall : ""),
-                "W: " + (SeedQueue.config.backgroundExecutorThreads == SeedQueueConfig.AUTO ? "Auto" : SeedQueue.config.backgroundExecutorThreads)
-                        + (SeedQueue.config.shouldUseWall() ? " | " + (SeedQueue.config.wallExecutorThreads == SeedQueueConfig.AUTO ? "Auto" : SeedQueue.config.wallExecutorThreads) : ""),
-                "M: " + SeedQueue.config.maxWorldGenerationPercentage + "%"
+                "C: " + SeedQueue.config.maxConcurrently + (SeedQueue.config.shouldUseWall() ? " | " + SeedQueue.config.maxConcurrently_onWall : "")
         ));
         return debugText;
     }

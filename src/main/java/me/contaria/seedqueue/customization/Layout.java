@@ -2,13 +2,13 @@ package me.contaria.seedqueue.customization;
 
 import com.google.gson.*;
 import me.contaria.seedqueue.SeedQueue;
-import me.contaria.seedqueue.gui.SeedQueueCrashToast;
 import me.contaria.seedqueue.gui.wall.SeedQueueWallScreen;
-import me.contaria.speedrunapi.util.TextUtil;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -41,19 +41,19 @@ public class Layout {
     }
 
     private static int getX(JsonObject jsonObject) {
-        return getAsInt(jsonObject, "x", MinecraftClient.getInstance().getWindow().getFramebufferWidth());
+        return getAsInt(jsonObject, "x", MinecraftClient.getInstance().width);
     }
 
     private static int getY(JsonObject jsonObject) {
-        return getAsInt(jsonObject, "y", MinecraftClient.getInstance().getWindow().getFramebufferHeight());
+        return getAsInt(jsonObject, "y", MinecraftClient.getInstance().height);
     }
 
     private static int getWidth(JsonObject jsonObject) {
-        return getAsInt(jsonObject, "width", MinecraftClient.getInstance().getWindow().getFramebufferWidth());
+        return getAsInt(jsonObject, "width", MinecraftClient.getInstance().width);
     }
 
     private static int getHeight(JsonObject jsonObject) {
-        return getAsInt(jsonObject, "height", MinecraftClient.getInstance().getWindow().getFramebufferHeight());
+        return getAsInt(jsonObject, "height", MinecraftClient.getInstance().height);
     }
 
     private static int getAsInt(JsonObject jsonObject, String name, int windowSize) {
@@ -84,15 +84,22 @@ public class Layout {
 
     public static Layout createLayout() {
         MinecraftClient client = MinecraftClient.getInstance();
-        if (client.getResourceManager().containsResource(SeedQueueWallScreen.CUSTOM_LAYOUT)) {
+        if (Layout.containsResource(SeedQueueWallScreen.CUSTOM_LAYOUT)) {
             try (Reader reader = new InputStreamReader(client.getResourceManager().getResource(SeedQueueWallScreen.CUSTOM_LAYOUT).getInputStream(), StandardCharsets.UTF_8)) {
                 return Layout.fromJson(new JsonParser().parse(reader).getAsJsonObject());
             } catch (Exception e) {
                 SeedQueue.LOGGER.warn("Failed to parse custom wall layout!", e);
-                MinecraftClient.getInstance().getToastManager().add(new SeedQueueCrashToast(TextUtil.translatable("seedqueue.menu.layout_exception.title"), TextUtil.translatable("seedqueue.menu.layout_exception.description", e.getClass().getSimpleName())));
             }
         }
-        return Layout.grid(SeedQueue.config.rows, SeedQueue.config.columns, client.getWindow().getFramebufferWidth(), client.getWindow().getFramebufferHeight());
+        return Layout.grid(SeedQueue.config.rows, SeedQueue.config.columns, client.width, client.height);
+    }
+
+    public static boolean containsResource(Identifier id) {
+        try {
+            return MinecraftClient.getInstance().getResourceManager().getResource(id) != null;
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     public static class Group {
