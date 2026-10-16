@@ -1,11 +1,23 @@
 {
   "seedqueue.menu.clearing": "SeedQueue 清理中...",
 
-  "seedqueue.menu.crash.title": "SeedQueue 崩溃了!",
+  "seedqueue.menu.crash.title": "SeedQueue 崩溃了！",
   "seedqueue.menu.crash.description": "崩溃原因：%s, 检查日志以获取更多信息。",
+
+  "seedqueue.menu.layout_exception.title": "自定义布局失败！",
+  "seedqueue.menu.layout_exception.description": "失败原因：%s, 检查日志以获取更多信息。",
+
+  "seedqueue.menu.memoryWarning.title": "§6§l分配的内存不足",
+  "seedqueue.menu.memoryWarning.message": "SeedQueue 可能没有足够的可用内存 (%d MiB)。尝试至少分配 %d MiB 内存, 或降低种子队列上限。",
+  "seedqueue.menu.memoryWarning.messageLowerQueued": "SeedQueue 可能没有足够的可用内存 (%d MiB)。尝试降低种子队列上限。",
+  "seedqueue.menu.memoryWarning.wikiLinkInfo": "点击此链接, 在 SeedQueue Wiki 上阅读更多内容:",
+  "seedqueue.menu.memoryWarning.doNotWarnAgain": "不再显示警告",
 
   "seedqueue.menu.benchmark.title": "SeedQueue 跑分",
   "seedqueue.menu.benchmark.result": "%s次重置, 用时%s秒 (%s RPS)",
+
+  "seedqueue.menu.config.unavailable.mcsrranked": "SeedQueue 与 MCSR Ranked 不兼容, 请创建单独的实例或禁用 Ranked 模组。",
+  "seedqueue.menu.config.unavailable.resetting": "重置过程中无法使用 SeedQueue 配置。\n你可以点击 %s 退出重置, 或按下退出墙的快捷键 (%s)。",
 
   "seedqueue.menu.config.useWall.notAvailable": "§c§o不可用",
   "seedqueue.menu.config.useWall.notAvailable.tooltip": "使用墙界面需要安装以下 mod：",
@@ -13,7 +25,7 @@
   "seedqueue.menu.config.useWall.notAvailable.tooltip.2": " - StandardSettings",
   "seedqueue.menu.config.useWall.notAvailable.tooltip.3": " - WorldPreview",
 
-  "seedqueue.menu.config.showAdvancedSettings.confirm.title": "确定启用高级选项吗?",
+  "seedqueue.menu.config.showAdvancedSettings.confirm.title": "确定启用高级选项吗？",
   "seedqueue.menu.config.showAdvancedSettings.confirm.message": "请不要在不清楚功能的情况下随意调整这些设置, 以免造成问题！",
 
   "seedqueue.menu.keys": "墙界面按键控制",
@@ -36,15 +48,18 @@
   "seedqueue.key.resetRow": "重置行",
   "seedqueue.key.resetColumn": "重置列",
   "seedqueue.key.playNextLock": "进入下个锁定实例",
+  "seedqueue.key.resetLastLock": "重置上个锁定实例",
   "seedqueue.key.scheduleJoin": "计划实例",
   "seedqueue.key.scheduleAll": "计划所有",
   "seedqueue.key.startBenchmark": "开始跑分",
   "seedqueue.key.cancelBenchmark": "结束跑分",
+  "seedqueue.key.quitWall": "退出墙界面",
 
   "speedrunapi.config.seedqueue.category.queue": "队列选项",
   "speedrunapi.config.seedqueue.category.wall": "墙界面选项",
   "speedrunapi.config.seedqueue.category.performance": "性能选项",
   "speedrunapi.config.seedqueue.category.misc": "杂项选项",
+  "speedrunapi.config.seedqueue.category.troubleshooting": "故障排查",
   "speedrunapi.config.seedqueue.category.advanced": "进阶选项",
   "speedrunapi.config.seedqueue.category.threading": "线程选项",
   "speedrunapi.config.seedqueue.category.experimental": "实验选项",
@@ -74,10 +89,16 @@
   "speedrunapi.config.seedqueue.option.resetCooldown.value": "%s毫秒",
   "speedrunapi.config.seedqueue.option.resetCooldown.value.1000": "1 秒",
   "speedrunapi.config.seedqueue.option.resetCooldown.description": "实例重置的冷却时间, 从实例开始渲染时开始计算。",
+  "speedrunapi.config.seedqueue.option.showPauseMenu": "显示暂停菜单",
+  "speedrunapi.config.seedqueue.option.showPauseMenu.description": "启用后, 游戏菜单界面将显示在预览画面上方。必须开启此选项, 才能使速通成绩被认定为 No F3。",
   "speedrunapi.config.seedqueue.option.waitForPreviewSetup": "等待渲染预备",
   "speedrunapi.config.seedqueue.option.waitForPreviewSetup.description": "若启用, 种子只有在准备好渲染预览后才会开始在墙屏幕上显示。\n如果您想在渲染预备期间查看区块加载进度图, 可以禁用此选项。",
   "speedrunapi.config.seedqueue.option.bypassWall": "跳过墙界面",
   "speedrunapi.config.seedqueue.option.bypassWall.description": "若启用, 当重置当前正在游玩的实例后, 不会强制回到墙界面, 而是继续进入下一个被锁定的实例, 直到没有下一个锁定的实例。",
+  "speedrunapi.config.seedqueue.option.smartSwitch": "只能切换",
+  "speedrunapi.config.seedqueue.option.smartSwitch.description": "试图进入尚未加载完成的实例时, 将尝试进入上一个锁定的实例。",
+  "speedrunapi.config.seedqueue.option.soundVolume": "音量",
+  "speedrunapi.config.seedqueue.option.soundVolume.value": "%s%%",
   "speedrunapi.config.seedqueue.option.wallFPS": "墙界面 FPS",
   "speedrunapi.config.seedqueue.option.wallFPS.description": "在墙界面的帧数限制",
   "speedrunapi.config.seedqueue.option.wallFPS.value": "%s fps",
@@ -115,11 +136,12 @@
   "speedrunapi.config.seedqueue.option.reduceLevelList": "减少世界列表",
   "speedrunapi.config.seedqueue.option.reduceLevelList.description": "从世界列表中隐藏在墙界面上被重置或在预览加载期间的世界, 以减少卡顿。",
   "speedrunapi.config.seedqueue.option.useWatchdog": "看门狗",
-  "speedrunapi.config.seedqueue.option.useWatchdog.description": "启动一个额外的线程, 每10秒打印一次主线程堆栈跟踪, 以诊断冻结问题。",
+  "speedrunapi.config.seedqueue.option.useWatchdog.description": "启动一个额外的线程, 每 10 秒打印一次主线程堆栈跟踪, 以诊断冻结问题。",
   "speedrunapi.config.seedqueue.option.showDebugMenu": "显示调试菜单",
   "speedrunapi.config.seedqueue.option.showDebugMenu.description": "在墙界面上显示 FPS 图形和分析器。\n§c仅用于调试, 启用此选项时完成任何的记录都将无法过审！",
   "speedrunapi.config.seedqueue.option.benchmarkResets": "跑分重置",
   "speedrunapi.config.seedqueue.option.benchmarkResets.description": "启动跑分时执行的默认重置数量。\n您可以使用\"开始跑分\"键启动跑分, 并在达到设定的重置数量之前使用\"停止跑分\"键停止跑分。",
   "speedrunapi.config.seedqueue.option.showChunkMaps": "SeedQueue 区块加载",
-  "speedrunapi.config.seedqueue.option.showChunkMaps.description": "显示当前正在加载的种子的区块加载进度"
+  "speedrunapi.config.seedqueue.option.showChunkMaps.description": "显示当前正在加载的种子的区块加载进度",
+  "speedrunapi.config.seedqueue.option.checkMinMemory": "检查已分配内存"
 }
